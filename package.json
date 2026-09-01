@@ -1,0 +1,16 @@
+{
+	"name": "yan-note",
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy --minify",
+		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
+	},
+	"dependencies": {
+		"hono": "^4.13.5"
+	},
+	"devDependencies": {
+		"@types/node": "^26.4.0",
+		"wrangler": "^4.127.1"
+	}
+}
