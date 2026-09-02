@@ -13,3 +13,7 @@ body {
 a {
   color: inherit;
 }
+
+.milkdown {
+  background-color: unset !important;
+}
