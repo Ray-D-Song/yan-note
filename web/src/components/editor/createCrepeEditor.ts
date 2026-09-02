@@ -1,5 +1,6 @@
 import { languages } from '@codemirror/language-data'
 import { CrepeBuilder } from '@milkdown/crepe/builder'
+import { remarkStringifyOptionsCtx } from '@milkdown/kit/core'
 import { blockEdit } from '@milkdown/crepe/feature/block-edit'
 import { codeMirror } from '@milkdown/crepe/feature/code-mirror'
 import { imageBlock } from '@milkdown/crepe/feature/image-block'
@@ -11,6 +12,7 @@ import { toolbar } from '@milkdown/crepe/feature/toolbar'
 import type { NodeViewFactory } from '@prosemirror-adapter/vue'
 
 import { createCustomBlockPlugins } from '@/components/editor/plugins'
+import { containerRemarkHandlers } from '@/components/editor/plugins/container-stringify'
 import { registerCustomSlashMenu } from '@/components/editor/plugins/slash-menu'
 import { getCodeMirrorTheme } from '@/lib/codeMirrorTheme'
 import type { ColorScheme } from '@/stores/theme'
@@ -30,6 +32,18 @@ export function createCrepeEditor(
     root,
     defaultValue: options.defaultValue ?? '',
   })
+
+  builder.editor.config((ctx) => {
+    ctx.update(remarkStringifyOptionsCtx, (prev) => ({
+      ...prev,
+      handlers: {
+        ...prev.handlers,
+        ...containerRemarkHandlers,
+      },
+    }))
+  })
+
+  builder
     .addFeature(blockEdit, {
       buildMenu: registerCustomSlashMenu,
     })

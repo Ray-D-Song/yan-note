@@ -57,17 +57,12 @@ export const toggleSchema = $nodeSchema('toggle', () => ({
   toMarkdown: {
     match: (node) => node.type.name === 'toggle',
     runner: (state, node) => {
-      const runner = state as unknown as {
-        openNode: (type: string, attrs?: Record<string, unknown>) => typeof state
-        next: (content: unknown) => typeof state
-        closeNode: () => void
-      }
-      runner.openNode('toggle', {
+      state.openNode('toggle', undefined, {
         title: node.attrs.title,
         open: node.attrs.open ? 'true' : 'false',
       })
-      runner.next(node.content)
-      runner.closeNode()
+      state.next(node.content)
+      state.closeNode()
     },
   },
 }))

@@ -68,14 +68,9 @@ export const columnGroupSchema = $nodeSchema('column_group', () => ({
   toMarkdown: {
     match: (node) => node.type.name === 'column_group',
     runner: (state, node) => {
-      const runner = state as unknown as {
-        openNode: (type: string, attrs?: Record<string, unknown>) => typeof state
-        next: (content: unknown) => typeof state
-        closeNode: () => void
-      }
-      runner.openNode('column_group', { count: String(node.attrs.count) })
-      runner.next(node.content)
-      runner.closeNode()
+      state.openNode('column_group', undefined, { count: String(node.attrs.count) })
+      state.next(node.content)
+      state.closeNode()
     },
   },
 }))

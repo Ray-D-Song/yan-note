@@ -46,14 +46,9 @@ export const calloutSchema = $nodeSchema('callout', () => ({
   toMarkdown: {
     match: (node) => node.type.name === 'callout',
     runner: (state, node) => {
-      const runner = state as unknown as {
-        openNode: (type: string, attrs?: Record<string, unknown>) => typeof state
-        next: (content: unknown) => typeof state
-        closeNode: () => void
-      }
-      runner.openNode('callout', { variant: node.attrs.variant })
-      runner.next(node.content)
-      runner.closeNode()
+      state.openNode('callout', undefined, { variant: node.attrs.variant })
+      state.next(node.content)
+      state.closeNode()
     },
   },
 }))

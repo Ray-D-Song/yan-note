@@ -46,10 +46,7 @@ export const databaseBlockSchema = $nodeSchema('database_block', () => ({
   toMarkdown: {
     match: (node) => node.type.name === 'database_block',
     runner: (state, node) => {
-      const runner = state as unknown as {
-        addNode: (type: string, attrs?: Record<string, unknown>) => void
-      }
-      runner.addNode('database_block', {
+      state.addNode('database_block', undefined, undefined, {
         databaseId: node.attrs.databaseId,
       })
     },
