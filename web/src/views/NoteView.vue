@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MilkdownEditorWrapper from '@/components/editor/MilkdownEditorWrapper.vue'
 import NoteIcon from '@/components/common/NoteIcon.vue'
+import { networkStatusLabel, useNetworkStatus } from '@/composables/useNetworkStatus'
 import { syncStatusLabel, useNoteSync } from '@/composables/useNoteSync'
 import { useNotesStore } from '@/stores/notes'
 import { getNoteBreadcrumbs } from '@/types/note'
@@ -43,6 +44,8 @@ const sync = useNoteSync({
 })
 
 const statusLabel = computed(() => syncStatusLabel(sync.status.value))
+const network = useNetworkStatus()
+const networkLabel = computed(() => networkStatusLabel(network.status.value))
 
 async function loadNote(id: string) {
   noteLoaded.value = false
@@ -130,12 +133,19 @@ function onEditorBlur() {
           </li>
         </ol>
       </nav>
-      <span
-        class="small"
-        :class="sync.status.value === 'error' ? 'text-danger' : 'text-muted'"
-      >
-        {{ statusLabel }}
-      </span>
+      <div class="d-flex align-items-center gap-2 small">
+        <span
+          v-if="networkLabel"
+          class="text-muted"
+        >
+          {{ networkLabel }}
+        </span>
+        <span
+          :class="sync.status.value === 'error' ? 'text-danger' : 'text-muted'"
+        >
+          {{ statusLabel }}
+        </span>
+      </div>
     </div>
 
     <input

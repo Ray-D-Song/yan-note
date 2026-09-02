@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { apiRequest } from '@/api/client'
+import { clearNoteApiCaches } from '@/lib/pwaCache'
 import type { User } from '@/types/note'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -46,6 +47,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     await apiRequest<{ ok: boolean }>('/auth/logout', { method: 'POST' })
+    await clearNoteApiCaches()
     user.value = null
   }
 

@@ -2,6 +2,7 @@ import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import { setupPwaUpdate } from './composables/usePwaUpdate'
 import { useThemeStore } from './stores/theme'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -18,5 +19,7 @@ app.use(pinia)
 app.use(router)
 
 useThemeStore(pinia).bindSystemPreference()
+
+setupPwaUpdate()
 
 app.mount('#app')
