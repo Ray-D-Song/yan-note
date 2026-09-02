@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { MilkdownProvider } from '@milkdown/vue'
 import MilkdownEditor from '@/components/editor/MilkdownEditor.vue'
+import { useThemeStore } from '@/stores/theme'
 
 defineProps<{
   initialContent: string
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   blur: []
 }>()
 
+const themeStore = useThemeStore()
 const editorRef = ref<InstanceType<typeof MilkdownEditor> | null>(null)
 
 function getMarkdown(): string {
@@ -30,7 +32,7 @@ defineExpose({
 </script>
 
 <template>
-  <MilkdownProvider>
+  <MilkdownProvider :key="themeStore.colorScheme">
     <MilkdownEditor
       ref="editorRef"
       :initial-content="initialContent"

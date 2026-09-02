@@ -1,10 +1,35 @@
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import type { Extension } from '@codemirror/state'
-import { oneDark } from '@codemirror/theme-one-dark'
+import { oneDarkHighlightStyle, oneDarkTheme } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import { tags as t } from '@lezer/highlight'
 
 import type { ColorScheme } from '@/stores/theme'
+
+const codeMirrorDarkTheme = EditorView.theme(
+  {
+    '&': {
+      backgroundColor: 'transparent',
+    },
+    '.cm-gutters': {
+      backgroundColor: 'transparent',
+      border: 'none',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    },
+  },
+  { dark: true },
+)
+
+export const codeMirrorDark: Extension = [
+  oneDarkTheme,
+  codeMirrorDarkTheme,
+  syntaxHighlighting(oneDarkHighlightStyle),
+]
 
 const codeMirrorLightTheme = EditorView.theme(
   {
@@ -77,5 +102,5 @@ export const codeMirrorLight: Extension = [
 ]
 
 export function getCodeMirrorTheme(colorScheme: ColorScheme): Extension {
-  return colorScheme === 'dark' ? oneDark : codeMirrorLight
+  return colorScheme === 'dark' ? codeMirrorDark : codeMirrorLight
 }

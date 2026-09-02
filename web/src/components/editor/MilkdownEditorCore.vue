@@ -40,6 +40,8 @@ const { get, loading } = useEditor((root) => {
     emit('blur')
   })
 
+  root.classList.add('milkdown')
+
   const crepe = createCrepeEditor(root, {
     defaultValue: props.initialContent,
     colorScheme: themeStore.colorScheme,
@@ -123,7 +125,7 @@ defineExpose({
 </script>
 
 <template>
-  <Milkdown class="milkdown-root" />
+  <Milkdown class="milkdown milkdown-root" />
 </template>
 
 <style scoped>

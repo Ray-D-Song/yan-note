@@ -3,7 +3,6 @@ import { ProsemirrorAdapterProvider, useNodeViewFactory } from '@prosemirror-ada
 import { ref, watch } from 'vue'
 
 import MilkdownEditorCore from '@/components/editor/MilkdownEditorCore.vue'
-import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps<{
   initialContent: string
@@ -15,7 +14,6 @@ const emit = defineEmits<{
   blur: []
 }>()
 
-const themeStore = useThemeStore()
 const nodeViewFactory = useNodeViewFactory()
 const coreRef = ref<InstanceType<typeof MilkdownEditorCore> | null>(null)
 const bootContent = ref(props.initialContent)
@@ -49,7 +47,6 @@ defineExpose({
   <ProsemirrorAdapterProvider>
     <MilkdownEditorCore
       ref="coreRef"
-      :key="themeStore.colorScheme"
       :initial-content="bootContent"
       :note-id="noteId"
       :node-view-factory="nodeViewFactory"

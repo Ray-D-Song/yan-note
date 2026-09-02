@@ -95,4 +95,16 @@ async function deleteNote(id: string, event: Event) {
 .note-tree-row:hover .delete-btn {
   opacity: 1;
 }
+
+:root[data-theme='dark'] .note-tree-row {
+  color: #e6e6e6;
+}
+
+:root[data-theme='dark'] .note-tree-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme='dark'] .note-tree-row.active {
+  background: rgba(255, 255, 255, 0.1);
+}
 </style>

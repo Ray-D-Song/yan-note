@@ -15,6 +15,47 @@ body {
   color: #e6e6e6;
 }
 
+:root[data-theme='dark'] .text-muted {
+  color: #9b9b9b !important;
+}
+
+:root[data-theme='dark'] .form-control {
+  background-color: transparent;
+  color: #e6e6e6;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme='dark'] .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+:root[data-theme='dark'] .form-control:focus {
+  background-color: transparent;
+  color: #e6e6e6;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .btn-outline-secondary {
+  --bs-btn-color: #e6e6e6;
+  --bs-btn-border-color: rgba(255, 255, 255, 0.2);
+  --bs-btn-hover-color: #191919;
+  --bs-btn-hover-bg: #e6e6e6;
+  --bs-btn-hover-border-color: #e6e6e6;
+  --bs-btn-active-color: #191919;
+  --bs-btn-active-bg: #d0d0d0;
+  --bs-btn-active-border-color: #d0d0d0;
+}
+
+:root[data-theme='dark'] .breadcrumb-item,
+:root[data-theme='dark'] .breadcrumb-item.active {
+  color: #b3b3b3;
+}
+
+:root[data-theme='dark'] .btn-link {
+  color: #9ecbff;
+}
+
 a {
   color: inherit;
 }

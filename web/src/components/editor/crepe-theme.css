@@ -1,19 +1,44 @@
-.milkdown-root {
+.milkdown-root.milkdown,
+.milkdown-root :deep(.milkdown) {
   --crepe-color-background: transparent;
   --crepe-color-on-background: #37352f;
-  --crepe-color-surface: #ffffff;
-  --crepe-color-surface-low: #f7f6f3;
+  --crepe-color-surface: #f7f6f3;
+  --crepe-color-surface-low: #f2f3fa;
+  --crepe-color-on-surface: #37352f;
+  --crepe-color-on-surface-variant: #43474e;
   --crepe-color-outline: rgba(55, 53, 47, 0.16);
   --crepe-color-primary: #2383e2;
+  --crepe-color-secondary: #d7e3f8;
+  --crepe-color-on-secondary: #101c2b;
+  --crepe-color-inverse: #2e3135;
+  --crepe-color-on-inverse: #eff0f7;
+  --crepe-color-inline-code: #ba1a1a;
+  --crepe-color-error: #ba1a1a;
+  --crepe-color-hover: #eceef4;
+  --crepe-color-selected: #e1e2e8;
+  --crepe-color-inline-area: #d8dae0;
   --crepe-font-default: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-:root[data-theme='dark'] .milkdown-root {
+:root[data-theme='dark'] .milkdown-root.milkdown,
+:root[data-theme='dark'] .milkdown-root :deep(.milkdown) {
+  --crepe-color-background: transparent;
   --crepe-color-on-background: #e6e6e6;
-  --crepe-color-surface: #2f2f2f;
-  --crepe-color-surface-low: #252525;
-  --crepe-color-outline: rgba(255, 255, 255, 0.12);
+  --crepe-color-surface: #2a2a2a;
+  --crepe-color-surface-low: #1f1f1f;
+  --crepe-color-on-surface: #e6e6e6;
+  --crepe-color-on-surface-variant: #b3b3b3;
+  --crepe-color-outline: rgba(255, 255, 255, 0.16);
   --crepe-color-primary: #6cb6ff;
+  --crepe-color-secondary: #3c4858;
+  --crepe-color-on-secondary: #d7e3f8;
+  --crepe-color-inverse: #e6e6e6;
+  --crepe-color-on-inverse: #2e3135;
+  --crepe-color-inline-code: #ff9da4;
+  --crepe-color-error: #ff9da4;
+  --crepe-color-hover: #333333;
+  --crepe-color-selected: #3a3a3a;
+  --crepe-color-inline-area: #333333;
 }
 
 .milkdown-root :deep(.milkdown) {
@@ -71,6 +96,17 @@
 .milkdown-root :deep(.milkdown-slash-menu) {
   border-radius: 8px;
   box-shadow: 0 8px 30px rgba(15, 15, 15, 0.12);
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.milkdown-slash-menu) {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+.milkdown-root :deep(.milkdown-code-block),
+.milkdown-root :deep(.milkdown-code-block .cm-editor),
+.milkdown-root :deep(.milkdown-code-block .cm-gutters) {
+  background: var(--crepe-color-surface) !important;
+  color: var(--crepe-color-on-surface);
 }
 
 .milkdown-root :deep(.yn-callout) {
@@ -172,4 +208,40 @@
   border-radius: 8px;
   margin: 8px 0;
   overflow: hidden;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-callout-info) {
+  background: rgba(35, 131, 226, 0.15);
+  border-left-color: #6cb6ff;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-callout-warning) {
+  background: rgba(217, 115, 13, 0.15);
+  border-left-color: #ffb86c;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-callout-success) {
+  background: rgba(15, 123, 108, 0.15);
+  border-left-color: #7ee787;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-callout-error) {
+  background: rgba(224, 62, 62, 0.15);
+  border-left-color: #ff9da4;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-toggle) {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-toggle-summary) {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-column) {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.yn-database-block) {
+  border-color: rgba(255, 255, 255, 0.1);
 }

@@ -149,6 +149,7 @@ function onEditorBlur() {
   font-size: 2.5rem;
   font-weight: 700;
   background: transparent;
+  color: inherit;
 }
 
 .note-title:focus {
