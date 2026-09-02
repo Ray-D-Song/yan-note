@@ -1,6 +1,7 @@
 {
 	"name": "yan-note",
 	"type": "module",
+	"packageManager": "pnpm@10.11.1",
 	"scripts": {
 		"dev": "wrangler dev",
 		"dev:web": "pnpm --filter web dev",
