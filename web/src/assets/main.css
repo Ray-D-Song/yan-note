@@ -68,3 +68,7 @@ a {
 .milkdown {
   background-color: unset !important;
 }
+
+.milkdown .ProseMirror {
+  padding-top: 16px;
+}

@@ -181,7 +181,7 @@
 
 .milkdown-root :deep(.yn-columns) {
   display: grid;
-  gap: 16px;
+  gap: 0;
   margin: 8px 0;
 }
 
@@ -195,12 +195,17 @@
 
 .milkdown-root :deep(.yn-column) {
   min-width: 0;
-  padding: 4px 8px;
-  border-left: 1px solid rgba(55, 53, 47, 0.09);
+  padding: 4px 16px;
+  border-left: 1px solid rgba(55, 53, 47, 0.16);
 }
 
 .milkdown-root :deep(.yn-column:first-child) {
   border-left: none;
+  padding-left: 0;
+}
+
+.milkdown-root :deep(.yn-column:last-child) {
+  padding-right: 0;
 }
 
 .milkdown-root :deep(.yn-database-block) {
@@ -239,7 +244,7 @@
 }
 
 :root[data-theme='dark'] .milkdown-root :deep(.yn-column) {
-  border-left-color: rgba(255, 255, 255, 0.1);
+  border-left-color: rgba(255, 255, 255, 0.18);
 }
 
 :root[data-theme='dark'] .milkdown-root :deep(.yn-database-block) {
