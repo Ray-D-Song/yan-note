@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MilkdownEditorWrapper from '@/components/editor/MilkdownEditorWrapper.vue'
+import NoteIcon from '@/components/common/NoteIcon.vue'
 import { syncStatusLabel, useNoteSync } from '@/composables/useNoteSync'
 import { useNotesStore } from '@/stores/notes'
 import { getNoteBreadcrumbs } from '@/types/note'
@@ -105,7 +106,8 @@ function onEditorBlur() {
             class="breadcrumb-item"
             :class="{ active: index === breadcrumbs.length - 1 }"
           >
-            {{ crumb.icon ?? '📄' }} {{ crumb.title }}
+            <span class="breadcrumb-icon"><NoteIcon size="14px" /></span>
+            {{ crumb.title }}
           </li>
         </ol>
       </nav>
@@ -155,5 +157,12 @@ function onEditorBlur() {
 
 .empty-state {
   min-height: 100%;
+}
+
+.breadcrumb-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.25rem;
+  vertical-align: middle;
 }
 </style>

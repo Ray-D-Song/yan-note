@@ -6,6 +6,7 @@ import {
   runInsertToggle,
 } from '@/components/editor/plugins'
 import { runInsertDatabaseBlock } from '@/components/editor/plugins/database'
+import { remixIconSvg } from '@/lib/remixIconSvg'
 
 export const slashMenuContext = {
   noteId: null as string | null,
@@ -18,37 +19,37 @@ export const registerCustomSlashMenu: NonNullable<
 
   notionGroup.addItem('callout-info', {
     label: 'Callout · 信息',
-    icon: '💡',
+    icon: remixIconSvg.lightbulb,
     onRun: (ctx) => runInsertCallout(ctx, 'info'),
   })
 
   notionGroup.addItem('callout-warning', {
     label: 'Callout · 警告',
-    icon: '⚠️',
+    icon: remixIconSvg.alert,
     onRun: (ctx) => runInsertCallout(ctx, 'warning'),
   })
 
   notionGroup.addItem('toggle', {
     label: 'Toggle 折叠块',
-    icon: '▸',
+    icon: remixIconSvg.arrowRight,
     onRun: (ctx) => runInsertToggle(ctx),
   })
 
   notionGroup.addItem('columns-2', {
     label: '两栏布局',
-    icon: '⫘',
+    icon: remixIconSvg.columns2,
     onRun: (ctx) => runInsertColumns(ctx, 2),
   })
 
   notionGroup.addItem('columns-3', {
     label: '三栏布局',
-    icon: '⫸',
+    icon: remixIconSvg.columns3,
     onRun: (ctx) => runInsertColumns(ctx, 3),
   })
 
   notionGroup.addItem('database', {
     label: 'Database 数据库',
-    icon: '🗂️',
+    icon: remixIconSvg.database,
     onRun: (ctx) => {
       void runInsertDatabaseBlock(ctx, slashMenuContext.noteId)
     },

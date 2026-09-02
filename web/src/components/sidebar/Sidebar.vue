@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RiAddLine, RiMoonLine, RiSearchLine, RiSunLine } from '@remixicon/vue'
 import { useRouter } from 'vue-router'
 import NoteTree from '@/components/sidebar/NoteTree.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -13,6 +14,10 @@ const router = useRouter()
 
 const themeToggleLabel = computed(() =>
   themeStore.colorScheme === 'dark' ? '浅色模式' : '深色模式',
+)
+
+const ThemeToggleIcon = computed(() =>
+  themeStore.colorScheme === 'dark' ? RiSunLine : RiMoonLine,
 )
 
 async function createNote() {
@@ -30,14 +35,18 @@ async function logout() {
   <aside class="sidebar d-flex flex-column border-end">
     <div class="p-3 border-bottom">
       <div class="input-group input-group-sm mb-2">
-        <span class="input-group-text sidebar-input-addon">🔍</span>
+        <span class="input-group-text sidebar-input-addon">
+          <RiSearchLine size="16px" aria-hidden="true" />
+        </span>
         <input class="form-control sidebar-input" type="search" placeholder="搜索或询问" disabled />
         <span class="input-group-text sidebar-input-addon text-muted small">Ctrl+K</span>
       </div>
-      <button class="btn btn-sm btn-outline-secondary w-100 mb-2" type="button" @click="createNote">
-        + 新建笔记
+      <button class="btn btn-sm btn-outline-secondary w-100 mb-2 d-inline-flex align-items-center justify-content-center gap-1" type="button" @click="createNote">
+        <RiAddLine size="16px" aria-hidden="true" />
+        新建笔记
       </button>
-      <button class="btn btn-sm btn-outline-secondary w-100" type="button" @click="themeStore.toggle()">
+      <button class="btn btn-sm btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-1" type="button" @click="themeStore.toggle()">
+        <component :is="ThemeToggleIcon" size="16px" aria-hidden="true" />
         {{ themeToggleLabel }}
       </button>
     </div>

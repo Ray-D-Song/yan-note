@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { RiCloseLine } from '@remixicon/vue'
 import { useRoute, useRouter } from 'vue-router'
+import NoteIcon from '@/components/common/NoteIcon.vue'
 import type { NoteTreeNode } from '@/types/note'
 import { useNotesStore } from '@/stores/notes'
 
@@ -45,7 +47,9 @@ async function deleteNote(id: string, event: Event) {
         role="button"
         @click="openNote(node.id)"
       >
-        <span class="me-2">{{ node.icon ?? '📄' }}</span>
+        <span class="me-2 note-tree-icon">
+          <NoteIcon />
+        </span>
         <span class="flex-grow-1 text-truncate small">{{ node.title }}</span>
         <button
           class="btn btn-sm btn-link text-danger text-decoration-none delete-btn p-0 ms-1"
@@ -53,7 +57,7 @@ async function deleteNote(id: string, event: Event) {
           title="删除"
           @click="deleteNote(node.id, $event)"
         >
-          ×
+          <RiCloseLine size="16px" aria-hidden="true" />
         </button>
       </div>
       <NoteTree v-if="node.children.length" :nodes="node.children" class="ms-3" />
@@ -78,6 +82,14 @@ async function deleteNote(id: string, event: Event) {
 .delete-btn {
   opacity: 0;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.note-tree-icon {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
 }
 
 .note-tree-row:hover .delete-btn {

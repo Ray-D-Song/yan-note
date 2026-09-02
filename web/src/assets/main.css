@@ -19,6 +19,11 @@ a {
   color: inherit;
 }
 
+.remixicon {
+  display: inline-block;
+  vertical-align: -0.125em;
+}
+
 .milkdown {
   background-color: unset !important;
 }
