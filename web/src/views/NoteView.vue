@@ -75,6 +75,25 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => notesStore.notes.find((note) => note.id === noteId.value)?.title,
+  (nextTitle) => {
+    if (
+      nextTitle === undefined ||
+      !noteId.value ||
+      sync.status.value === 'dirty' ||
+      nextTitle === title.value
+    ) {
+      return
+    }
+    title.value = nextTitle
+    sync.setBaseline({
+      title: nextTitle,
+      content: editorRef.value?.getMarkdown() ?? initialContent.value,
+    })
+  },
+)
+
 function onTitleInput() {
   sync.markDirty()
 }
