@@ -1,8 +1,57 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AppLayout from '@/layouts/AppLayout.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [],
+  routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/views/LoginView.vue'),
+      meta: { guest: true },
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('@/views/RegisterView.vue'),
+      meta: { guest: true },
+    },
+    {
+      path: '/',
+      component: AppLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'home',
+          component: () => import('@/views/NoteView.vue'),
+        },
+        {
+          path: 'note/:id',
+          name: 'note',
+          component: () => import('@/views/NoteView.vue'),
+        },
+      ],
+    },
+  ],
+})
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+  if (!auth.initialized) {
+    await auth.fetchMe()
+  }
+
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
+
+  if (to.meta.guest && auth.isAuthenticated) {
+    return { name: 'home' }
+  }
+
+  return true
 })
 
 export default router

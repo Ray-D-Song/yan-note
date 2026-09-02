@@ -4,7 +4,9 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
-		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
+		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
+		"db:migrate:local": "wrangler d1 migrations apply yan-note-db --local",
+		"dev:web": "pnpm --dir web dev"
 	},
 	"dependencies": {
 		"hono": "^4.13.5"
