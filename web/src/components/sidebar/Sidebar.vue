@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
-  RiAddLine,
   RiCalendarLine,
+  RiEditBoxLine,
   RiListCheck,
   RiMoonLine,
   RiSearchLine,
@@ -52,30 +52,34 @@ async function logout() {
 
 <template>
   <aside class="sidebar d-flex flex-column border-end">
-    <div class="p-3 border-bottom">
-      <div class="input-group input-group-sm mb-2">
+    <div class="sidebar-header p-3 border-bottom">
+      <div class="sidebar-toolbar">
+        <button
+          class="sidebar-icon-btn"
+          type="button"
+          :aria-label="themeToggleLabel"
+          :title="themeToggleLabel"
+          @click="themeStore.toggle()"
+        >
+          <component :is="ThemeToggleIcon" size="18px" aria-hidden="true" />
+        </button>
+        <button
+          class="sidebar-icon-btn"
+          type="button"
+          aria-label="新建笔记"
+          title="新建笔记"
+          @click="createNote"
+        >
+          <RiEditBoxLine size="18px" aria-hidden="true" />
+        </button>
+      </div>
+      <div class="input-group input-group-sm">
         <span class="input-group-text sidebar-input-addon">
           <RiSearchLine size="16px" aria-hidden="true" />
         </span>
         <input class="form-control sidebar-input" type="search" placeholder="搜索或询问" disabled />
         <span class="input-group-text sidebar-input-addon text-muted small">Ctrl+K</span>
       </div>
-      <button
-        class="btn btn-sm btn-outline-secondary w-100 mb-2 d-inline-flex align-items-center justify-content-center gap-1"
-        type="button"
-        @click="createNote"
-      >
-        <RiAddLine size="16px" aria-hidden="true" />
-        新建笔记
-      </button>
-      <button
-        class="btn btn-sm btn-outline-secondary w-100 d-inline-flex align-items-center justify-content-center gap-1"
-        type="button"
-        @click="themeStore.toggle()"
-      >
-        <component :is="ThemeToggleIcon" size="16px" aria-hidden="true" />
-        {{ themeToggleLabel }}
-      </button>
     </div>
 
     <div class="flex-grow-1 overflow-auto px-2 py-2">
@@ -122,6 +126,42 @@ async function logout() {
   background: #202020;
   color: #e6e6e6;
   border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.sidebar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(55, 53, 47, 0.65);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-icon-btn:hover {
+  background: rgba(55, 53, 47, 0.06);
+  color: rgba(55, 53, 47, 0.9);
+}
+
+:root[data-theme='dark'] .sidebar-icon-btn {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+:root[data-theme='dark'] .sidebar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .sidebar-input,
