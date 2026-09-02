@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, inject, nextTick, ref, type Ref } from 'vue'
-import { RiAddLine, RiMoreLine } from '@remixicon/vue'
+import { computed, inject, nextTick, ref, watch, type Ref } from 'vue'
+import { RiAddLine, RiArrowRightSLine, RiMoreLine } from '@remixicon/vue'
 import { useRoute, useRouter } from 'vue-router'
 import NoteIcon from '@/components/common/NoteIcon.vue'
 import NoteActionMenu from '@/components/sidebar/NoteActionMenu.vue'
@@ -17,6 +17,9 @@ const notesStore = useNotesStore()
 
 const openMenuId = inject<Ref<string | null>>('noteTreeOpenMenuId')!
 const setOpenMenuId = inject<(id: string | null) => void>('noteTreeSetOpenMenuId')!
+const collapsedIds = inject<Ref<Set<string>>>('noteTreeCollapsedIds')!
+const toggleCollapsed = inject<(id: string) => void>('noteTreeToggleCollapsed')!
+const expandNode = inject<(id: string) => void>('noteTreeExpandNode')!
 
 const isRenaming = ref(false)
 const renameDraft = ref('')
@@ -25,6 +28,38 @@ const menuAnchorRef = ref<HTMLElement | null>(null)
 
 const isActive = computed(() => route.params.id === props.node.id)
 const isMenuOpen = computed(() => openMenuId.value === props.node.id)
+const hasChildren = computed(() => props.node.children.length > 0)
+const isExpanded = computed(() => !collapsedIds.value.has(props.node.id))
+
+const hasActiveDescendant = computed(() => {
+  const currentId = route.params.id
+  if (typeof currentId !== 'string') {
+    return false
+  }
+  return nodeContainsId(props.node, currentId) && currentId !== props.node.id
+})
+
+function nodeContainsId(node: NoteTreeNode, id: string): boolean {
+  if (node.id === id) {
+    return true
+  }
+  return node.children.some((child) => nodeContainsId(child, id))
+}
+
+watch(
+  hasActiveDescendant,
+  (active) => {
+    if (active) {
+      expandNode(props.node.id)
+    }
+  },
+  { immediate: true },
+)
+
+function toggleExpand(event: Event) {
+  stopRowClick(event)
+  toggleCollapsed(props.node.id)
+}
 
 async function openNote() {
   if (isRenaming.value) {
@@ -40,6 +75,7 @@ function stopRowClick(event: Event) {
 async function createChildNote(event: Event) {
   stopRowClick(event)
   setOpenMenuId(null)
+  expandNode(props.node.id)
   const note = await notesStore.createNote({ parent_id: props.node.id })
   await router.push({ name: 'note', params: { id: note.id } })
 }
@@ -113,6 +149,23 @@ async function deleteNote() {
       role="button"
       @click="openNote"
     >
+      <button
+        v-if="hasChildren"
+        class="note-tree-toggle"
+        type="button"
+        :aria-expanded="isExpanded"
+        aria-label="展开或折叠子页面"
+        @click="toggleExpand"
+      >
+        <RiArrowRightSLine
+          class="note-tree-toggle-icon"
+          :class="{ expanded: isExpanded }"
+          size="16px"
+          aria-hidden="true"
+        />
+      </button>
+      <span v-else class="note-tree-toggle-spacer" aria-hidden="true" />
+
       <span class="me-2 note-tree-icon">
         <NoteIcon />
       </span>
@@ -166,7 +219,7 @@ async function deleteNote() {
       </div>
     </div>
 
-    <ul v-if="node.children.length" class="list-unstyled note-tree ms-3 mb-0">
+    <ul v-if="hasChildren && isExpanded" class="list-unstyled note-tree ms-3 mb-0">
       <NoteTreeItem v-for="child in node.children" :key="child.id" :node="child" />
     </ul>
   </li>
@@ -190,6 +243,42 @@ async function deleteNote() {
 
 .note-tree-row.is-renaming {
   background: rgba(0, 0, 0, 0.04);
+}
+
+.note-tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(55, 53, 47, 0.45);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.note-tree-toggle:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: rgba(55, 53, 47, 0.75);
+}
+
+.note-tree-toggle-icon {
+  transition: transform 0.15s ease;
+}
+
+.note-tree-toggle-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.note-tree-toggle-spacer {
+  width: 20px;
+  margin-right: 2px;
+  flex-shrink: 0;
 }
 
 .note-tree-icon {
@@ -261,6 +350,15 @@ async function deleteNote() {
 
 :root[data-theme='dark'] .note-tree-row.active {
   background: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .note-tree-toggle {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+:root[data-theme='dark'] .note-tree-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 :root[data-theme='dark'] .note-tree-action-btn {
