@@ -1,3 +1,5 @@
+import { languages } from '@codemirror/language-data'
+import { oneDark } from '@codemirror/theme-one-dark'
 import { CrepeBuilder } from '@milkdown/crepe/builder'
 import { blockEdit } from '@milkdown/crepe/feature/block-edit'
 import { codeMirror } from '@milkdown/crepe/feature/code-mirror'
@@ -37,7 +39,13 @@ export function createCrepeEditor(
     .addFeature(listItem)
     .addFeature(linkTooltip)
     .addFeature(table)
-    .addFeature(codeMirror)
+    .addFeature(codeMirror, {
+      languages,
+      theme: oneDark,
+      searchPlaceholder: '搜索语言',
+      noResultText: '无匹配语言',
+      copyText: '复制',
+    })
 
   if (options.onUpload) {
     builder.addFeature(imageBlock, {
