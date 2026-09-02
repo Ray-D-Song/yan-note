@@ -52,7 +52,7 @@ async function logout() {
 
 <template>
   <aside class="sidebar d-flex flex-column border-end">
-    <div class="sidebar-header p-3 border-bottom">
+    <div class="sidebar-header p-3 pt-1 border-bottom">
       <div class="sidebar-toolbar">
         <button
           class="sidebar-icon-btn"
@@ -164,17 +164,42 @@ async function logout() {
   color: rgba(255, 255, 255, 0.9);
 }
 
+.sidebar-header {
+  border-color: rgba(55, 53, 47, 0.09) !important;
+}
+
+:root[data-theme='dark'] .sidebar-header {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-header .input-group {
+  background: #fff;
+  border: 1px solid rgba(55, 53, 47, 0.16);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .sidebar-input,
 .sidebar-input-addon {
-  background: #fff;
+  background: transparent;
   color: inherit;
-  border-color: rgba(55, 53, 47, 0.16);
+  border: none;
+  box-shadow: none;
+}
+
+.sidebar-header .form-control.sidebar-input:disabled {
+  background-color: transparent;
+  color: inherit;
+  opacity: 1;
+}
+
+:root[data-theme='dark'] .sidebar-header .input-group {
+  background: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 :root[data-theme='dark'] .sidebar-input,
 :root[data-theme='dark'] .sidebar-input-addon {
-  background: #2a2a2a;
-  border-color: rgba(255, 255, 255, 0.12);
   color: #e6e6e6;
 }
 
