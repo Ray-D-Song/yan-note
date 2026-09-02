@@ -10,6 +10,11 @@ body {
   color: #37352f;
 }
 
+:root[data-theme='dark'] body {
+  background: #191919;
+  color: #e6e6e6;
+}
+
 a {
   color: inherit;
 }

@@ -8,11 +8,23 @@
   --crepe-font-default: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+:root[data-theme='dark'] .milkdown-root {
+  --crepe-color-on-background: #e6e6e6;
+  --crepe-color-surface: #2f2f2f;
+  --crepe-color-surface-low: #252525;
+  --crepe-color-outline: rgba(255, 255, 255, 0.12);
+  --crepe-color-primary: #6cb6ff;
+}
+
 .milkdown-root :deep(.milkdown) {
   outline: none;
   color: #37352f;
   font-size: 16px;
   line-height: 1.5;
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.milkdown) {
+  color: #e6e6e6;
 }
 
 .milkdown-root :deep(.ProseMirror) {
@@ -44,8 +56,16 @@
   pointer-events: none;
 }
 
+:root[data-theme='dark'] .milkdown-root :deep(.crepe-placeholder::before) {
+  color: rgba(255, 255, 255, 0.35);
+}
+
 .milkdown-root :deep(.milkdown-block-handle) {
   color: rgba(55, 53, 47, 0.35);
+}
+
+:root[data-theme='dark'] .milkdown-root :deep(.milkdown-block-handle) {
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .milkdown-root :deep(.milkdown-slash-menu) {

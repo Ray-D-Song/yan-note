@@ -1,5 +1,4 @@
 import { languages } from '@codemirror/language-data'
-import { oneDark } from '@codemirror/theme-one-dark'
 import { CrepeBuilder } from '@milkdown/crepe/builder'
 import { blockEdit } from '@milkdown/crepe/feature/block-edit'
 import { codeMirror } from '@milkdown/crepe/feature/code-mirror'
@@ -13,9 +12,12 @@ import type { NodeViewFactory } from '@prosemirror-adapter/vue'
 
 import { createCustomBlockPlugins } from '@/components/editor/plugins'
 import { registerCustomSlashMenu } from '@/components/editor/plugins/slash-menu'
+import { getCodeMirrorTheme } from '@/lib/codeMirrorTheme'
+import type { ColorScheme } from '@/stores/theme'
 
 export type CreateCrepeEditorOptions = {
   defaultValue?: string
+  colorScheme?: ColorScheme
   onUpload?: (file: File) => Promise<string>
   nodeViewFactory?: NodeViewFactory
 }
@@ -41,7 +43,7 @@ export function createCrepeEditor(
     .addFeature(table)
     .addFeature(codeMirror, {
       languages,
-      theme: oneDark,
+      theme: getCodeMirrorTheme(options.colorScheme ?? 'light'),
       searchPlaceholder: '搜索语言',
       noResultText: '无匹配语言',
       copyText: '复制',

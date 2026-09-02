@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { getMarkdown, replaceAll } from '@milkdown/kit/utils'
-import { Milkdown, useEditor } from '@milkdown/vue'
 import { ProsemirrorAdapterProvider, useNodeViewFactory } from '@prosemirror-adapter/vue'
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 
-import { createCrepeEditor } from '@/components/editor/createCrepeEditor'
-import { slashMenuContext } from '@/components/editor/plugins/slash-menu'
-import { uploadImageFile } from '@/lib/upload'
+import MilkdownEditorCore from '@/components/editor/MilkdownEditorCore.vue'
+import { useThemeStore } from '@/stores/theme'
 
 const props = defineProps<{
   initialContent: string
@@ -18,108 +15,47 @@ const emit = defineEmits<{
   blur: []
 }>()
 
-const isComposing = ref(false)
-const isApplyingInitialContent = ref(false)
-const hasAppliedInitialContent = ref(false)
+const themeStore = useThemeStore()
 const nodeViewFactory = useNodeViewFactory()
+const coreRef = ref<InstanceType<typeof MilkdownEditorCore> | null>(null)
+const bootContent = ref(props.initialContent)
 
-const { get, loading } = useEditor((root) => {
-  slashMenuContext.noteId = props.noteId ?? null
+watch(
+  () => props.initialContent,
+  (content) => {
+    bootContent.value = content
+  },
+)
 
-  root.addEventListener('compositionstart', () => {
-    isComposing.value = true
-  })
-  root.addEventListener('compositionend', () => {
-    isComposing.value = false
-    emit('dirty')
-  })
-  root.addEventListener('blur', () => {
-    emit('blur')
-  })
-
-  const crepe = createCrepeEditor(root, {
-    defaultValue: props.initialContent,
-    nodeViewFactory,
-    onUpload: uploadImageFile,
-  })
-
-  crepe.on((listener) => {
-    listener.markdownUpdated(() => {
-      if (isApplyingInitialContent.value || isComposing.value) {
-        return
-      }
-      emit('dirty')
-    })
-  })
-
-  return crepe
-})
-
-async function applyInitialContent() {
-  const editor = get()
-  if (!editor || loading.value) {
-    return false
-  }
-
-  isApplyingInitialContent.value = true
-  try {
-    editor.action(replaceAll(props.initialContent, true))
-    hasAppliedInitialContent.value = true
-    return true
-  } finally {
-    isApplyingInitialContent.value = false
-  }
+function onSnapshot(content: string) {
+  bootContent.value = content
 }
 
-watch(
-  () => [loading.value, props.initialContent] as const,
-  async ([isLoading]) => {
-    if (isLoading || hasAppliedInitialContent.value) {
-      return
-    }
-    await nextTick()
-    await applyInitialContent()
-  },
-  { immediate: true },
-)
-
-watch(
-  () => props.noteId,
-  (noteId) => {
-    slashMenuContext.noteId = noteId ?? null
-  },
-  { immediate: true },
-)
+function getMarkdown(): string {
+  return coreRef.value?.getMarkdown() ?? ''
+}
 
 function isReady(): boolean {
-  const editor = get()
-  return !loading.value && Boolean(editor) && hasAppliedInitialContent.value
-}
-
-function readMarkdown(): string {
-  const editor = get()
-  if (!editor || loading.value) {
-    return ''
-  }
-  return editor.action(getMarkdown())
+  return coreRef.value?.isReady() ?? false
 }
 
 defineExpose({
-  getMarkdown: readMarkdown,
+  getMarkdown,
   isReady,
 })
 </script>
 
 <template>
   <ProsemirrorAdapterProvider>
-    <Milkdown class="milkdown-root" />
+    <MilkdownEditorCore
+      ref="coreRef"
+      :key="themeStore.colorScheme"
+      :initial-content="bootContent"
+      :note-id="noteId"
+      :node-view-factory="nodeViewFactory"
+      @dirty="emit('dirty')"
+      @blur="emit('blur')"
+      @snapshot="onSnapshot"
+    />
   </ProsemirrorAdapterProvider>
 </template>
-
-<style scoped>
-@import '@/components/editor/crepe-theme.css';
-
-.milkdown-root {
-  min-height: 320px;
-}
-</style>

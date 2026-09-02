@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import NoteTree from '@/components/sidebar/NoteTree.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useNotesStore } from '@/stores/notes'
+import { useThemeStore } from '@/stores/theme'
 
 const auth = useAuthStore()
 const notesStore = useNotesStore()
+const themeStore = useThemeStore()
 const router = useRouter()
+
+const themeToggleLabel = computed(() =>
+  themeStore.colorScheme === 'dark' ? '浅色模式' : '深色模式',
+)
 
 async function createNote() {
   const note = await notesStore.createNote()
@@ -20,15 +27,18 @@ async function logout() {
 </script>
 
 <template>
-  <aside class="sidebar d-flex flex-column bg-light border-end">
+  <aside class="sidebar d-flex flex-column border-end">
     <div class="p-3 border-bottom">
       <div class="input-group input-group-sm mb-2">
-        <span class="input-group-text bg-white">🔍</span>
-        <input class="form-control" type="search" placeholder="搜索或询问" disabled />
-        <span class="input-group-text bg-white text-muted small">Ctrl+K</span>
+        <span class="input-group-text sidebar-input-addon">🔍</span>
+        <input class="form-control sidebar-input" type="search" placeholder="搜索或询问" disabled />
+        <span class="input-group-text sidebar-input-addon text-muted small">Ctrl+K</span>
       </div>
-      <button class="btn btn-sm btn-outline-secondary w-100" type="button" @click="createNote">
+      <button class="btn btn-sm btn-outline-secondary w-100 mb-2" type="button" @click="createNote">
         + 新建笔记
+      </button>
+      <button class="btn btn-sm btn-outline-secondary w-100" type="button" @click="themeStore.toggle()">
+        {{ themeToggleLabel }}
       </button>
     </div>
 
@@ -53,5 +63,27 @@ async function logout() {
 .sidebar {
   width: 260px;
   min-width: 260px;
+  background: #f7f6f3;
+  color: #37352f;
+}
+
+:root[data-theme='dark'] .sidebar {
+  background: #202020;
+  color: #e6e6e6;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-input,
+.sidebar-input-addon {
+  background: #fff;
+  color: inherit;
+  border-color: rgba(55, 53, 47, 0.16);
+}
+
+:root[data-theme='dark'] .sidebar-input,
+:root[data-theme='dark'] .sidebar-input-addon {
+  background: #2a2a2a;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #e6e6e6;
 }
 </style>

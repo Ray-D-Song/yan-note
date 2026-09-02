@@ -21,7 +21,7 @@ onMounted(async () => {
 <template>
   <div class="app-layout d-flex vh-100 overflow-hidden">
     <Sidebar />
-    <main class="flex-grow-1 overflow-auto bg-white">
+    <main class="app-main flex-grow-1 overflow-auto">
       <router-view />
     </main>
   </div>
@@ -30,5 +30,20 @@ onMounted(async () => {
 <style scoped>
 .app-layout {
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #fff;
+  color: #37352f;
+}
+
+:root[data-theme='dark'] .app-layout {
+  background: #191919;
+  color: #e6e6e6;
+}
+
+.app-main {
+  background: #fff;
+}
+
+:root[data-theme='dark'] .app-main {
+  background: #191919;
 }
 </style>
