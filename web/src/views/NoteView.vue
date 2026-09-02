@@ -91,7 +91,7 @@ function onEditorBlur() {
 <template>
   <div v-if="!noteId" class="empty-state d-flex align-items-center justify-content-center h-100">
     <div class="text-center text-muted">
-      <h2 class="h4 mb-2">欢迎使用 Yan-Note</h2>
+      <h2 class="h4 mb-2">欢迎使用 Yan</h2>
       <p class="mb-0">从左侧选择笔记，或新建一条开始写作</p>
     </div>
   </div>

@@ -28,7 +28,7 @@ async function onSubmit() {
   <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
     <div class="card shadow-sm" style="width: 400px">
       <div class="card-body p-4">
-        <h1 class="h4 mb-4 text-center">登录 Yan-Note</h1>
+        <h1 class="h4 mb-4 text-center">登录 Yan</h1>
         <form @submit.prevent="onSubmit">
           <div class="mb-3">
             <label class="form-label" for="email">邮箱</label>
