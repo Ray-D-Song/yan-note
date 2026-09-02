@@ -21,6 +21,7 @@ const setOpenMenuId = inject<(id: string | null) => void>('noteTreeSetOpenMenuId
 const isRenaming = ref(false)
 const renameDraft = ref('')
 const renameInputRef = ref<HTMLInputElement | null>(null)
+const menuAnchorRef = ref<HTMLElement | null>(null)
 
 const isActive = computed(() => route.params.id === props.node.id)
 const isMenuOpen = computed(() => openMenuId.value === props.node.id)
@@ -142,7 +143,7 @@ async function deleteNote() {
         >
           <RiAddLine size="16px" aria-hidden="true" />
         </button>
-        <div class="note-tree-menu-anchor">
+        <div ref="menuAnchorRef" class="note-tree-menu-anchor">
           <button
             class="note-tree-action-btn"
             type="button"
@@ -156,6 +157,7 @@ async function deleteNote() {
           </button>
           <NoteActionMenu
             v-if="isMenuOpen"
+            :anchor-el="menuAnchorRef"
             @close="closeMenu"
             @rename="startRename"
             @delete="deleteNote"

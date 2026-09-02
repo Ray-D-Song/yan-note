@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { RiDeleteBinLine, RiEditLine } from '@remixicon/vue'
+
+const props = defineProps<{
+  anchorEl: HTMLElement | null
+}>()
 
 const emit = defineEmits<{
   rename: []
@@ -9,11 +13,28 @@ const emit = defineEmits<{
 }>()
 
 const menuRef = ref<HTMLElement | null>(null)
+const menuStyle = ref<{ top: string; left: string }>({ top: '0px', left: '0px' })
+
+function updatePosition() {
+  if (!props.anchorEl) {
+    return
+  }
+  const rect = props.anchorEl.getBoundingClientRect()
+  menuStyle.value = {
+    top: `${rect.top}px`,
+    left: `${rect.left + rect.width + 4}px`,
+  }
+}
 
 function onDocumentClick(event: MouseEvent) {
-  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
-    emit('close')
+  const target = event.target as Node
+  if (
+    menuRef.value?.contains(target) ||
+    props.anchorEl?.contains(target)
+  ) {
+    return
   }
+  emit('close')
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -23,14 +44,26 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 onMounted(() => {
+  updatePosition()
+  window.addEventListener('scroll', updatePosition, true)
+  window.addEventListener('resize', updatePosition)
   document.addEventListener('click', onDocumentClick, true)
   document.addEventListener('keydown', onKeydown)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('scroll', updatePosition, true)
+  window.removeEventListener('resize', updatePosition)
   document.removeEventListener('click', onDocumentClick, true)
   document.removeEventListener('keydown', onKeydown)
 })
+
+watch(
+  () => props.anchorEl,
+  () => {
+    updatePosition()
+  },
+)
 
 function onRename(event: Event) {
   event.stopPropagation()
@@ -44,7 +77,14 @@ function onDelete(event: Event) {
 </script>
 
 <template>
-  <div ref="menuRef" class="note-action-menu" role="menu" @click.stop>
+  <Teleport to="body">
+    <div
+      ref="menuRef"
+      class="note-action-menu"
+      role="menu"
+      :style="menuStyle"
+      @click.stop
+    >
     <div class="note-action-menu-label">页面</div>
     <button class="note-action-menu-item" type="button" role="menuitem" @click="onRename">
       <RiEditLine size="16px" aria-hidden="true" />
@@ -60,14 +100,13 @@ function onDelete(event: Event) {
       <RiDeleteBinLine size="16px" aria-hidden="true" />
       <span>移至垃圾箱</span>
     </button>
-  </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
 .note-action-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
+  position: fixed;
   z-index: 1050;
   width: 220px;
   padding: 6px 0;

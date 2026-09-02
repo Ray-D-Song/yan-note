@@ -15,7 +15,7 @@ export const slashMenuContext = {
 export const registerCustomSlashMenu: NonNullable<
   BlockEditFeatureConfig['buildMenu']
 > = (builder) => {
-  const notionGroup = builder.addGroup('notion', 'Notion 块')
+  const notionGroup = builder.addGroup('notion', '块')
 
   notionGroup.addItem('callout-info', {
     label: 'Callout · 信息',

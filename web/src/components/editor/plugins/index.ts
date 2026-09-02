@@ -2,6 +2,7 @@ import { $remark } from '@milkdown/kit/utils'
 import type { NodeViewFactory } from '@prosemirror-adapter/vue'
 
 import { calloutSchema, insertCalloutCommand, runInsertCallout } from './callout'
+import { parseContainerBlocks } from './container-parse'
 import { columnGroupSchema, columnSchema, insertColumnsCommand, runInsertColumns } from './columns'
 import { createDatabasePlugins } from './database'
 import {
@@ -12,57 +13,6 @@ import {
 } from './toggle'
 
 export { registerCustomSlashMenu } from './slash-menu'
-
-type ContainerBlock = {
-  type: string
-  attrs: Record<string, string>
-  bodyLines: string[]
-}
-
-function parseContainerBlocks(source: string): ContainerBlock[] {
-  const lines = source.split('\n')
-  const blocks: ContainerBlock[] = []
-  let index = 0
-
-  while (index < lines.length) {
-    const line = lines[index] ?? ''
-    const match = line.match(/^:::(\w+)(?:\s+(.*))?$/)
-    if (!match || !match[1]) {
-      index += 1
-      continue
-    }
-
-    const type = match[1]
-    const attrs: Record<string, string> = {}
-    const attrPart = match[2]
-    if (attrPart) {
-      for (const attrMatch of attrPart.matchAll(/(\w+)="([^"]*)"/g)) {
-        if (attrMatch[1]) {
-          attrs[attrMatch[1]] = attrMatch[2] ?? ''
-        }
-      }
-      if (type === 'toggle' && !attrPart.includes('=')) {
-        attrs.title = attrPart.replace(/^"|"$/g, '')
-      } else if (type === 'callout' && !attrPart.includes('=')) {
-        attrs.type = attrPart
-      }
-    }
-
-    index += 1
-    const bodyLines: string[] = []
-    while (index < lines.length && lines[index] !== ':::') {
-      bodyLines.push(lines[index] ?? '')
-      index += 1
-    }
-    if (lines[index] === ':::') {
-      index += 1
-    }
-
-    blocks.push({ type, attrs, bodyLines })
-  }
-
-  return blocks
-}
 
 function linesToParagraphs(lines: string[]) {
   const paragraphs = lines.join('\n').trim()
