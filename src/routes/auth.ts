@@ -1,15 +1,16 @@
 import { Hono } from 'hono'
 import { createUser, findUserByEmail, findUserById } from '../lib/db'
-import { createToken, clearAuthCookie, setAuthCookie } from '../lib/jwt'
 import { hashPassword, verifyPassword } from '../lib/password'
+import {
+  clearAuthCookie,
+  createSession,
+  deleteSession,
+  getSessionFromCookie,
+  setAuthCookie,
+} from '../lib/session'
 import { authMiddleware, type AuthVariables } from '../middleware/auth'
 
-type AuthBindings = CloudflareBindings & {
-  JWT_SECRET: string
-  JWT_EXPIRES_IN?: string
-}
-
-const auth = new Hono<{ Bindings: AuthBindings; Variables: AuthVariables }>()
+const auth = new Hono<{ Bindings: CloudflareBindings; Variables: AuthVariables }>()
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -17,13 +18,12 @@ function isValidEmail(email: string): boolean {
 
 async function issueSession(
   c: {
-    env: AuthBindings
+    env: CloudflareBindings
     header: (name: string, value: string) => void
   },
   userId: string,
-  email: string,
 ) {
-  const token = await createToken(userId, email, c.env.JWT_SECRET, c.env.JWT_EXPIRES_IN ?? '7d')
+  const token = await createSession(c.env.DB, userId)
   setAuthCookie(c, token)
 }
 
@@ -42,11 +42,6 @@ auth.post('/register', async (c) => {
     return c.json({ error: 'Password must be at least 6 characters' }, 400)
   }
 
-  const secret = c.env.JWT_SECRET
-  if (!secret) {
-    return c.json({ error: 'Server misconfigured' }, 500)
-  }
-
   const existing = await findUserByEmail(c.env.DB, email)
   if (existing) {
     return c.json({ error: 'Email already registered' }, 409)
@@ -55,7 +50,7 @@ auth.post('/register', async (c) => {
   const userId = crypto.randomUUID()
   const passwordHash = await hashPassword(password)
   await createUser(c.env.DB, userId, email, passwordHash)
-  await issueSession(c, userId, email.toLowerCase())
+  await issueSession(c, userId)
 
   return c.json({ id: userId, email: email.toLowerCase() }, 201)
 })
@@ -69,21 +64,20 @@ auth.post('/login', async (c) => {
     return c.json({ error: 'Email and password are required' }, 400)
   }
 
-  const secret = c.env.JWT_SECRET
-  if (!secret) {
-    return c.json({ error: 'Server misconfigured' }, 500)
-  }
-
   const user = await findUserByEmail(c.env.DB, email)
   if (!user || !(await verifyPassword(password, user.password_hash))) {
     return c.json({ error: 'Invalid email or password' }, 401)
   }
 
-  await issueSession(c, user.id, user.email)
+  await issueSession(c, user.id)
   return c.json({ id: user.id, email: user.email })
 })
 
-auth.post('/logout', (c) => {
+auth.post('/logout', async (c) => {
+  const token = getSessionFromCookie(c.req.header('Cookie'))
+  if (token) {
+    await deleteSession(c.env.DB, token)
+  }
   clearAuthCookie(c)
   return c.json({ ok: true })
 })

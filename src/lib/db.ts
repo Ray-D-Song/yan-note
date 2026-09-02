@@ -26,6 +26,17 @@ export type NoteListItem = {
   updated_at: number
 }
 
+export type SessionRow = {
+  id: string
+  user_id: string
+  expires_at: number
+  created_at: number
+}
+
+export type SessionWithUserRow = SessionRow & {
+  email: string
+}
+
 export function now(): number {
   return Date.now()
 }
@@ -172,4 +183,33 @@ export async function isValidParent(
   }
   const parent = await findNoteById(db, userId, parentId)
   return parent !== null
+}
+
+export async function createSessionRecord(
+  db: D1Database,
+  session: SessionRow,
+): Promise<void> {
+  await db
+    .prepare('INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)')
+    .bind(session.id, session.user_id, session.expires_at, session.created_at)
+    .run()
+}
+
+export async function findSessionWithUser(
+  db: D1Database,
+  sessionId: string,
+): Promise<SessionWithUserRow | null> {
+  return db
+    .prepare(
+      `SELECT s.id, s.user_id, s.expires_at, s.created_at, u.email
+       FROM sessions s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.id = ?`,
+    )
+    .bind(sessionId)
+    .first<SessionWithUserRow>()
+}
+
+export async function deleteSessionRecord(db: D1Database, sessionId: string): Promise<void> {
+  await db.prepare('DELETE FROM sessions WHERE id = ?').bind(sessionId).run()
 }

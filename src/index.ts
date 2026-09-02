@@ -4,12 +4,7 @@ import authRoutes from './routes/auth'
 import notesRoutes from './routes/notes'
 import type { AuthVariables } from './middleware/auth'
 
-type AppBindings = CloudflareBindings & {
-  JWT_SECRET: string
-  JWT_EXPIRES_IN?: string
-}
-
-const app = new Hono<{ Bindings: AppBindings; Variables: AuthVariables }>()
+const app = new Hono<{ Bindings: CloudflareBindings; Variables: AuthVariables }>()
 
 app.use(
   '/api/*',

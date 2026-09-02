@@ -19,9 +19,6 @@
 			"database_id": "00000000-0000-0000-0000-000000000001"
 		}
 	],
-	"vars": {
-		"JWT_EXPIRES_IN": "7d"
-	},
 	"observability": {
 		"enabled": true
 	},
