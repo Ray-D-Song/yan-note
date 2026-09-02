@@ -3,10 +3,10 @@ import { Editor, defaultValueCtx, rootCtx } from '@milkdown/kit/core'
 import { commonmark } from '@milkdown/kit/preset/commonmark'
 import { history } from '@milkdown/kit/plugin/history'
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
-import { getMarkdown } from '@milkdown/kit/utils'
+import { getMarkdown, replaceAll } from '@milkdown/kit/utils'
 import { nord } from '@milkdown/theme-nord'
 import { Milkdown, useEditor } from '@milkdown/vue'
-import { ref } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 
 const props = defineProps<{
   initialContent: string
@@ -18,6 +18,8 @@ const emit = defineEmits<{
 }>()
 
 const isComposing = ref(false)
+const isApplyingInitialContent = ref(false)
+const hasAppliedInitialContent = ref(false)
 
 const { get, loading } = useEditor((root) => {
   root.addEventListener('compositionstart', () => {
@@ -37,9 +39,10 @@ const { get, loading } = useEditor((root) => {
       ctx.set(defaultValueCtx, props.initialContent)
       ctx.inject(listenerCtx)
       ctx.get(listenerCtx).markdownUpdated(() => {
-        if (!isComposing.value) {
-          emit('dirty')
+        if (isApplyingInitialContent.value || isComposing.value) {
+          return
         }
+        emit('dirty')
       })
       nord(ctx)
     })
@@ -48,9 +51,37 @@ const { get, loading } = useEditor((root) => {
     .use(listener)
 })
 
+async function applyInitialContent() {
+  const editor = get()
+  if (!editor || loading.value) {
+    return false
+  }
+
+  isApplyingInitialContent.value = true
+  try {
+    editor.action(replaceAll(props.initialContent, true))
+    hasAppliedInitialContent.value = true
+    return true
+  } finally {
+    isApplyingInitialContent.value = false
+  }
+}
+
+watch(
+  () => [loading.value, props.initialContent] as const,
+  async ([isLoading, content]) => {
+    if (isLoading || hasAppliedInitialContent.value) {
+      return
+    }
+    await nextTick()
+    await applyInitialContent()
+  },
+  { immediate: true },
+)
+
 function isReady(): boolean {
   const editor = get()
-  return !loading.value && Boolean(editor)
+  return !loading.value && Boolean(editor) && hasAppliedInitialContent.value
 }
 
 function readMarkdown(): string {
@@ -78,5 +109,9 @@ defineExpose({
 
 .milkdown-root :deep(.milkdown) {
   outline: none;
+}
+
+.milkdown-root :deep(.ProseMirror) {
+  min-height: 280px;
 }
 </style>

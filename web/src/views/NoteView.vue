@@ -12,6 +12,7 @@ const notesStore = useNotesStore()
 const title = ref('')
 const initialContent = ref('')
 const noteLoaded = ref(false)
+const editorKey = ref(0)
 const editorRef = ref<InstanceType<typeof MilkdownEditorWrapper> | null>(null)
 
 const noteId = computed(() =>
@@ -51,6 +52,7 @@ async function loadNote(id: string) {
     title: title.value,
     content: initialContent.value,
   })
+  editorKey.value += 1
   noteLoaded.value = true
 }
 
@@ -124,7 +126,7 @@ function onEditorBlur() {
 
     <MilkdownEditorWrapper
       v-if="noteLoaded"
-      :key="noteId"
+      :key="`${noteId}-${editorKey}`"
       ref="editorRef"
       :initial-content="initialContent"
       @dirty="onEditorDirty"
