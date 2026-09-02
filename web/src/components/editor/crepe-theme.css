@@ -1,0 +1,146 @@
+.milkdown-root {
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: #37352f;
+  --crepe-color-surface: #ffffff;
+  --crepe-color-surface-low: #f7f6f3;
+  --crepe-color-outline: rgba(55, 53, 47, 0.16);
+  --crepe-color-primary: #2383e2;
+  --crepe-font-default: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.milkdown-root :deep(.milkdown) {
+  outline: none;
+  color: #37352f;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.milkdown-root :deep(.ProseMirror) {
+  min-height: 280px;
+  padding-left: 2px;
+}
+
+.milkdown-root :deep(.ProseMirror h1) {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 1.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.milkdown-root :deep(.ProseMirror h2) {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 1.2rem;
+}
+
+.milkdown-root :deep(.ProseMirror h3) {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.milkdown-root :deep(.crepe-placeholder::before) {
+  color: rgba(55, 53, 47, 0.4);
+  pointer-events: none;
+}
+
+.milkdown-root :deep(.milkdown-block-handle) {
+  color: rgba(55, 53, 47, 0.35);
+}
+
+.milkdown-root :deep(.milkdown-slash-menu) {
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(15, 15, 15, 0.12);
+}
+
+.milkdown-root :deep(.yn-callout) {
+  border-radius: 6px;
+  padding: 16px;
+  margin: 4px 0;
+}
+
+.milkdown-root :deep(.yn-callout-info) {
+  background: #eef6fb;
+  border-left: 3px solid #2383e2;
+}
+
+.milkdown-root :deep(.yn-callout-warning) {
+  background: #faf5eb;
+  border-left: 3px solid #d9730d;
+}
+
+.milkdown-root :deep(.yn-callout-success) {
+  background: #edf7ed;
+  border-left: 3px solid #0f7b6c;
+}
+
+.milkdown-root :deep(.yn-callout-error) {
+  background: #fdebec;
+  border-left: 3px solid #e03e3e;
+}
+
+.milkdown-root :deep(.yn-toggle) {
+  border: 1px solid rgba(55, 53, 47, 0.09);
+  border-radius: 6px;
+  margin: 4px 0;
+  overflow: hidden;
+}
+
+.milkdown-root :deep(.yn-toggle-summary) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  background: rgba(55, 53, 47, 0.03);
+}
+
+.milkdown-root :deep(.yn-toggle-summary::before) {
+  content: '▸';
+  transition: transform 0.15s ease;
+}
+
+.milkdown-root :deep(.yn-toggle.is-open .yn-toggle-summary::before) {
+  transform: rotate(90deg);
+}
+
+.milkdown-root :deep(.yn-toggle-body) {
+  padding: 8px 12px 12px;
+}
+
+.milkdown-root :deep(.yn-toggle-body[hidden]) {
+  display: none;
+}
+
+.milkdown-root :deep(.yn-columns) {
+  display: grid;
+  gap: 16px;
+  margin: 8px 0;
+}
+
+.milkdown-root :deep(.yn-columns-2) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.milkdown-root :deep(.yn-columns-3) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.milkdown-root :deep(.yn-column) {
+  min-width: 0;
+  padding: 4px 8px;
+  border-left: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+.milkdown-root :deep(.yn-column:first-child) {
+  border-left: none;
+}
+
+.milkdown-root :deep(.yn-database-block) {
+  border: 1px solid rgba(55, 53, 47, 0.09);
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow: hidden;
+}

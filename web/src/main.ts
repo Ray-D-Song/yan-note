@@ -5,7 +5,9 @@ import router from './router'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-import '@milkdown/theme-nord/style.css'
+import '@milkdown/crepe/theme/common/style.css'
+import '@milkdown/crepe/theme/frame.css'
+import '@milkdown/crepe/theme/nord.css'
 import './assets/main.css'
 
 const app = createApp(App)

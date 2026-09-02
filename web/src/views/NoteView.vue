@@ -129,6 +129,7 @@ function onEditorBlur() {
       :key="`${noteId}-${editorKey}`"
       ref="editorRef"
       :initial-content="initialContent"
+      :note-id="noteId"
       @dirty="onEditorDirty"
       @blur="onEditorBlur"
     />

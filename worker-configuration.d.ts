@@ -4,6 +4,7 @@
 interface __BaseEnv_CloudflareBindings {
 	DB: D1Database;
 	ASSETS: Fetcher;
+	UPLOADS: R2Bucket;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {

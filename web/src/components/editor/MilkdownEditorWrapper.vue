@@ -5,6 +5,7 @@ import MilkdownEditor from '@/components/editor/MilkdownEditor.vue'
 
 defineProps<{
   initialContent: string
+  noteId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +34,7 @@ defineExpose({
     <MilkdownEditor
       ref="editorRef"
       :initial-content="initialContent"
+      :note-id="noteId"
       @dirty="emit('dirty')"
       @blur="emit('blur')"
     />

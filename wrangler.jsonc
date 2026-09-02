@@ -19,6 +19,12 @@
 			"database_id": "20a8754e-fed5-4d3f-8a28-54f2c4c9b77c"
 		}
 	],
+	"r2_buckets": [
+		{
+			"binding": "UPLOADS",
+			"bucket_name": "yan-note-uploads"
+		}
+	],
 	"observability": {
 		"enabled": true
 	},

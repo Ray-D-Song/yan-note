@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { Editor, defaultValueCtx, rootCtx } from '@milkdown/kit/core'
-import { commonmark } from '@milkdown/kit/preset/commonmark'
-import { history } from '@milkdown/kit/plugin/history'
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { getMarkdown, replaceAll } from '@milkdown/kit/utils'
-import { nord } from '@milkdown/theme-nord'
 import { Milkdown, useEditor } from '@milkdown/vue'
+import { ProsemirrorAdapterProvider, useNodeViewFactory } from '@prosemirror-adapter/vue'
 import { nextTick, ref, watch } from 'vue'
+
+import { createCrepeEditor } from '@/components/editor/createCrepeEditor'
+import { slashMenuContext } from '@/components/editor/plugins/slash-menu'
+import { uploadImageFile } from '@/lib/upload'
 
 const props = defineProps<{
   initialContent: string
+  noteId?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -20,8 +21,11 @@ const emit = defineEmits<{
 const isComposing = ref(false)
 const isApplyingInitialContent = ref(false)
 const hasAppliedInitialContent = ref(false)
+const nodeViewFactory = useNodeViewFactory()
 
 const { get, loading } = useEditor((root) => {
+  slashMenuContext.noteId = props.noteId ?? null
+
   root.addEventListener('compositionstart', () => {
     isComposing.value = true
   })
@@ -33,22 +37,22 @@ const { get, loading } = useEditor((root) => {
     emit('blur')
   })
 
-  return Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, root)
-      ctx.set(defaultValueCtx, props.initialContent)
-      ctx.inject(listenerCtx)
-      ctx.get(listenerCtx).markdownUpdated(() => {
-        if (isApplyingInitialContent.value || isComposing.value) {
-          return
-        }
-        emit('dirty')
-      })
-      nord(ctx)
+  const crepe = createCrepeEditor(root, {
+    defaultValue: props.initialContent,
+    nodeViewFactory,
+    onUpload: uploadImageFile,
+  })
+
+  crepe.on((listener) => {
+    listener.markdownUpdated(() => {
+      if (isApplyingInitialContent.value || isComposing.value) {
+        return
+      }
+      emit('dirty')
     })
-    .use(commonmark)
-    .use(history)
-    .use(listener)
+  })
+
+  return crepe
 })
 
 async function applyInitialContent() {
@@ -69,12 +73,20 @@ async function applyInitialContent() {
 
 watch(
   () => [loading.value, props.initialContent] as const,
-  async ([isLoading, content]) => {
+  async ([isLoading]) => {
     if (isLoading || hasAppliedInitialContent.value) {
       return
     }
     await nextTick()
     await applyInitialContent()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.noteId,
+  (noteId) => {
+    slashMenuContext.noteId = noteId ?? null
   },
   { immediate: true },
 )
@@ -99,19 +111,15 @@ defineExpose({
 </script>
 
 <template>
-  <Milkdown class="milkdown-root" />
+  <ProsemirrorAdapterProvider>
+    <Milkdown class="milkdown-root" />
+  </ProsemirrorAdapterProvider>
 </template>
 
 <style scoped>
+@import '@/components/editor/crepe-theme.css';
+
 .milkdown-root {
   min-height: 320px;
-}
-
-.milkdown-root :deep(.milkdown) {
-  outline: none;
-}
-
-.milkdown-root :deep(.ProseMirror) {
-  min-height: 280px;
 }
 </style>
