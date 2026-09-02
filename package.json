@@ -3,10 +3,13 @@
 	"type": "module",
 	"scripts": {
 		"dev": "wrangler dev",
-		"deploy": "wrangler deploy --minify",
+		"dev:web": "pnpm --filter web dev",
+		"build": "pnpm --filter web build",
+		"build:web": "pnpm --filter web build",
+		"deploy": "pnpm build && wrangler deploy --minify",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:migrate:local": "wrangler d1 migrations apply yan-note-db --local",
-		"dev:web": "pnpm --dir web dev"
+		"db:migrate:remote": "wrangler d1 migrations apply yan-note-db --remote"
 	},
 	"dependencies": {
 		"hono": "^4.13.5"
