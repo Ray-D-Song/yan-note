@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import MilkdownEditorWrapper from '@/components/editor/MilkdownEditorWrapper.vue'
+import { syncStatusLabel, useNoteSync } from '@/composables/useNoteSync'
 import { useNotesStore } from '@/stores/notes'
 import { getNoteBreadcrumbs } from '@/types/note'
 
@@ -9,9 +10,9 @@ const route = useRoute()
 const notesStore = useNotesStore()
 
 const title = ref('')
-const content = ref('')
-const saveTimer = ref<number | null>(null)
-const saving = ref(false)
+const initialContent = ref('')
+const noteLoaded = ref(false)
+const editorRef = ref<InstanceType<typeof MilkdownEditorWrapper> | null>(null)
 
 const noteId = computed(() =>
   typeof route.params.id === 'string' ? route.params.id : null,
@@ -24,55 +25,63 @@ const breadcrumbs = computed(() => {
   return getNoteBreadcrumbs(notesStore.notes, noteId.value)
 })
 
+const sync = useNoteSync({
+  noteId,
+  getSnapshot: () => ({
+    title: title.value,
+    content: editorRef.value?.getMarkdown() ?? '',
+  }),
+  isReady: () => editorRef.value?.isReady() ?? false,
+  save: async (id, snapshot) => {
+    await notesStore.updateNote(id, {
+      title: snapshot.title,
+      content: snapshot.content,
+    })
+  },
+})
+
+const statusLabel = computed(() => syncStatusLabel(sync.status.value))
+
 async function loadNote(id: string) {
+  noteLoaded.value = false
   await notesStore.fetchNote(id)
   title.value = notesStore.currentNote?.title ?? ''
-  content.value = notesStore.currentNote?.content ?? ''
+  initialContent.value = notesStore.currentNote?.content ?? ''
+  sync.setBaseline({
+    title: title.value,
+    content: initialContent.value,
+  })
+  noteLoaded.value = true
 }
 
 watch(
   noteId,
-  async (id) => {
+  async (id, previousId) => {
+    if (previousId && previousId !== id) {
+      await sync.flush()
+    }
     if (id) {
       await loadNote(id)
     } else {
       title.value = ''
-      content.value = ''
+      initialContent.value = ''
+      noteLoaded.value = false
+      sync.setBaseline({ title: '', content: '' })
     }
   },
   { immediate: true },
 )
 
-function scheduleSave(payload: { title?: string; content?: string }) {
-  if (!noteId.value) {
-    return
-  }
-  if (saveTimer.value) {
-    window.clearTimeout(saveTimer.value)
-  }
-  saveTimer.value = window.setTimeout(async () => {
-    saving.value = true
-    try {
-      await notesStore.updateNote(noteId.value!, payload)
-    } finally {
-      saving.value = false
-    }
-  }, 800)
+function onTitleInput() {
+  sync.markDirty()
 }
 
-function onTitleBlur() {
-  if (!noteId.value || title.value === notesStore.currentNote?.title) {
-    return
-  }
-  scheduleSave({ title: title.value })
+function onEditorDirty() {
+  sync.markDirty()
 }
 
-function onContentChange(value: string) {
-  content.value = value
-  if (!noteId.value || value === notesStore.currentNote?.content) {
-    return
-  }
-  scheduleSave({ content: value })
+function onEditorBlur() {
+  void sync.flush()
 }
 </script>
 
@@ -98,21 +107,30 @@ function onContentChange(value: string) {
           </li>
         </ol>
       </nav>
-      <span v-if="saving" class="text-muted small">保存中...</span>
+      <span
+        class="small"
+        :class="sync.status.value === 'error' ? 'text-danger' : 'text-muted'"
+      >
+        {{ statusLabel }}
+      </span>
     </div>
 
     <input
       v-model="title"
       class="note-title form-control border-0 shadow-none px-0 mb-3"
       placeholder="无标题"
-      @blur="onTitleBlur"
+      @input="onTitleInput"
     />
 
     <MilkdownEditorWrapper
+      v-if="noteLoaded"
       :key="noteId"
-      :model-value="content"
-      @update:model-value="onContentChange"
+      ref="editorRef"
+      :initial-content="initialContent"
+      @dirty="onEditorDirty"
+      @blur="onEditorBlur"
     />
+    <div v-else class="text-muted small py-3">加载中...</div>
   </div>
 </template>
 

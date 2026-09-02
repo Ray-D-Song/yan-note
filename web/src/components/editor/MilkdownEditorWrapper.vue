@@ -1,18 +1,40 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { MilkdownProvider } from '@milkdown/vue'
 import MilkdownEditor from '@/components/editor/MilkdownEditor.vue'
 
 defineProps<{
-  modelValue: string
+  initialContent: string
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
+  dirty: []
+  blur: []
 }>()
+
+const editorRef = ref<InstanceType<typeof MilkdownEditor> | null>(null)
+
+function getMarkdown(): string {
+  return editorRef.value?.getMarkdown() ?? ''
+}
+
+function isReady(): boolean {
+  return editorRef.value?.isReady() ?? false
+}
+
+defineExpose({
+  getMarkdown,
+  isReady,
+})
 </script>
 
 <template>
   <MilkdownProvider>
-    <MilkdownEditor :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" />
+    <MilkdownEditor
+      ref="editorRef"
+      :initial-content="initialContent"
+      @dirty="emit('dirty')"
+      @blur="emit('blur')"
+    />
   </MilkdownProvider>
 </template>
