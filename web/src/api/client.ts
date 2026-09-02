@@ -7,6 +7,15 @@ export class ApiError extends Error {
   }
 }
 
+export const API_V1_BASE = '/api/v1'
+
+function resolveApiPath(path: string): string {
+  if (path.startsWith('/api/')) {
+    return path
+  }
+  return `${API_V1_BASE}${path.startsWith('/') ? path : `/${path}`}`
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   const data = (await response.json()) as T & { error?: string }
   if (!response.ok) {
@@ -19,7 +28,7 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(resolveApiPath(path), {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',

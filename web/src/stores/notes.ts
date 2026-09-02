@@ -16,13 +16,13 @@ export const useNotesStore = defineStore('notes', () => {
   const notesTree = computed<NoteTreeNode[]>(() => buildNoteTree(notes.value))
 
   async function fetchNotes() {
-    notes.value = await apiRequest<NoteListItem[]>('/api/notes')
+    notes.value = await apiRequest<NoteListItem[]>('/notes')
   }
 
   async function fetchNote(id: string) {
     loading.value = true
     try {
-      currentNote.value = await apiRequest<Note>(`/api/notes/${id}`)
+      currentNote.value = await apiRequest<Note>(`/notes/${id}`)
       const index = notes.value.findIndex((note) => note.id === id)
       if (index >= 0) {
         notes.value[index] = {
@@ -53,7 +53,7 @@ export const useNotesStore = defineStore('notes', () => {
     parent_id?: string | null
     content?: string
   } = {}) {
-    const note = await apiRequest<Note>('/api/notes', {
+    const note = await apiRequest<Note>('/notes', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -72,7 +72,7 @@ export const useNotesStore = defineStore('notes', () => {
     id: string,
     payload: Partial<Pick<Note, 'title' | 'content' | 'parent_id' | 'icon'>>,
   ) {
-    const note = await apiRequest<Note>(`/api/notes/${id}`, {
+    const note = await apiRequest<Note>(`/notes/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
@@ -94,7 +94,7 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   async function deleteNote(id: string) {
-    await apiRequest<{ ok: boolean }>(`/api/notes/${id}`, { method: 'DELETE' })
+    await apiRequest<{ ok: boolean }>(`/notes/${id}`, { method: 'DELETE' })
     notes.value = notes.value.filter((note) => note.id !== id)
     if (currentNote.value?.id === id) {
       currentNote.value = null

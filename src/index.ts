@@ -7,15 +7,19 @@ import type { AuthVariables } from './middleware/auth'
 const app = new Hono<{ Bindings: CloudflareBindings; Variables: AuthVariables }>()
 
 app.use(
-  '/api/*',
+  '/api/v1/*',
   cors({
     origin: (origin) => origin ?? '*',
     credentials: true,
   }),
 )
 
-app.route('/api/auth', authRoutes)
-app.route('/api/notes', notesRoutes)
+const v1 = new Hono<{ Bindings: CloudflareBindings; Variables: AuthVariables }>()
+
+v1.route('/auth', authRoutes)
+v1.route('/notes', notesRoutes)
+
+app.route('/api/v1', v1)
 
 app.onError((err, c) => {
   console.error(err)
