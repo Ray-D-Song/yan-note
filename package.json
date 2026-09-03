@@ -7,7 +7,7 @@
 		"dev:web": "pnpm --filter web dev",
 		"build": "pnpm --filter web build",
 		"build:web": "pnpm --filter web build",
-		"deploy": "pnpm build && pnpm db:verify:pre && pnpm db:migrations:apply && pnpm db:verify:post && wrangler deploy --minify",
+		"deploy:prod": "pnpm build && pnpm db:verify:pre && pnpm db:migrations:apply && pnpm db:verify:post && wrangler deploy --minify",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:migrations:apply": "wrangler d1 migrations apply DB --remote",
 		"db:migrate:local": "wrangler d1 migrations apply DB --local",
