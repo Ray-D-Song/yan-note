@@ -18,6 +18,7 @@ export default defineConfig({
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      useCredentials: true,
       includeAssets: ['favicon.ico', 'favicon.svg', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
         name: 'Yan',
