@@ -15,39 +15,39 @@ export const slashMenuContext = {
 export const registerCustomSlashMenu: NonNullable<
   BlockEditFeatureConfig['buildMenu']
 > = (builder) => {
-  const notionGroup = builder.addGroup('notion', '块')
+  const blockGroup = builder.addGroup('block', 'block')
 
-  notionGroup.addItem('callout-info', {
+  blockGroup.addItem('callout-info', {
     label: 'Callout · 信息',
     icon: remixIconSvg.lightbulb,
     onRun: (ctx) => runInsertCallout(ctx, 'info'),
   })
 
-  notionGroup.addItem('callout-warning', {
+  blockGroup.addItem('callout-warning', {
     label: 'Callout · 警告',
     icon: remixIconSvg.alert,
     onRun: (ctx) => runInsertCallout(ctx, 'warning'),
   })
 
-  notionGroup.addItem('toggle', {
+  blockGroup.addItem('toggle', {
     label: 'Toggle 折叠块',
     icon: remixIconSvg.arrowRight,
     onRun: (ctx) => runInsertToggle(ctx),
   })
 
-  notionGroup.addItem('columns-2', {
+  blockGroup.addItem('columns-2', {
     label: '两栏布局',
     icon: remixIconSvg.columns2,
     onRun: (ctx) => runInsertColumns(ctx, 2),
   })
 
-  notionGroup.addItem('columns-3', {
+  blockGroup.addItem('columns-3', {
     label: '三栏布局',
     icon: remixIconSvg.columns3,
     onRun: (ctx) => runInsertColumns(ctx, 3),
   })
 
-  notionGroup.addItem('database', {
+  blockGroup.addItem('database', {
     label: 'Database 数据库',
     icon: remixIconSvg.database,
     onRun: (ctx) => {
