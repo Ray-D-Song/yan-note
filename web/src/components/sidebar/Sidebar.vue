@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import {
   RiCalendarLine,
+  RiDeleteBinLine,
   RiEditBoxLine,
   RiListCheck,
   RiMoonLine,
@@ -32,6 +33,7 @@ const ThemeToggleIcon = computed(() =>
 const footerNavItems = [
   { name: 'list' as const, label: '清单', icon: RiListCheck },
   { name: 'calendar' as const, label: '日历', icon: RiCalendarLine },
+  { name: 'trash' as const, label: '回收站', icon: RiDeleteBinLine },
   { name: 'settings' as const, label: '设置', icon: RiSettings3Line },
 ]
 

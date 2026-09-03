@@ -127,7 +127,7 @@ function onRenameKeydown(event: KeyboardEvent) {
 
 async function deleteNote() {
   closeMenu()
-  if (!confirm('确定删除这条笔记及其子笔记吗？')) {
+  if (!confirm('确定将这条笔记及其子笔记移至垃圾箱吗？')) {
     return
   }
   await notesStore.deleteNote(props.node.id)

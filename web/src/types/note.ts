@@ -18,6 +18,10 @@ export interface Note extends NoteListItem {
   content: string
 }
 
+export interface TrashNoteItem extends NoteListItem {
+  deleted_at: number
+}
+
 export interface NoteTreeNode extends NoteListItem {
   children: NoteTreeNode[]
 }
@@ -99,4 +103,21 @@ export function isDescendantOfNote(
   }
 
   return false
+}
+
+export function collectDescendantIds(notes: NoteListItem[], rootId: string): Set<string> {
+  const ids = new Set<string>()
+  const queue = [rootId]
+
+  while (queue.length > 0) {
+    const current = queue.shift()!
+    ids.add(current)
+    for (const note of notes) {
+      if (note.parent_id === current) {
+        queue.push(note.id)
+      }
+    }
+  }
+
+  return ids
 }

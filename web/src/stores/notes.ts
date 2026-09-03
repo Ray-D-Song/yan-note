@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { apiRequest } from '@/api/client'
 import {
   buildNoteTree,
+  collectDescendantIds,
   type Note,
   type NoteListItem,
   type NoteReorderUpdate,
@@ -100,8 +101,9 @@ export const useNotesStore = defineStore('notes', () => {
 
   async function deleteNote(id: string) {
     await apiRequest<{ ok: boolean }>(`/notes/${id}`, { method: 'DELETE' })
-    notes.value = notes.value.filter((note) => note.id !== id)
-    if (currentNote.value?.id === id) {
+    const idsToRemove = collectDescendantIds(notes.value, id)
+    notes.value = notes.value.filter((note) => !idsToRemove.has(note.id))
+    if (currentNote.value && idsToRemove.has(currentNote.value.id)) {
       currentNote.value = null
     }
   }

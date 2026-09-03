@@ -2,11 +2,15 @@ import { Hono } from 'hono'
 import {
   createNote,
   deleteNote,
+  emptyTrash,
   findNoteById,
   getNextSortOrder,
+  hardDeleteNotes,
   isValidParent,
   listNotesByUser,
+  listTrashByUser,
   reorderNotes,
+  restoreNotes,
   updateNote,
 } from '../lib/db'
 import { authMiddleware, type AuthVariables } from '../middleware/auth'
@@ -40,6 +44,40 @@ notes.put('/reorder', async (c) => {
   }
 
   return c.json({ ok: true })
+})
+
+notes.get('/trash', async (c) => {
+  const userId = c.get('userId')
+  const items = await listTrashByUser(c.env.DB, userId)
+  return c.json(items)
+})
+
+notes.post('/trash/restore', async (c) => {
+  const userId = c.get('userId')
+  const body = await c.req.json<{ ids?: string[] }>()
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return c.json({ error: 'Invalid restore payload' }, 400)
+  }
+
+  const restored = await restoreNotes(c.env.DB, userId, body.ids)
+  return c.json({ ok: true, restored })
+})
+
+notes.delete('/trash/all', async (c) => {
+  const userId = c.get('userId')
+  const deleted = await emptyTrash(c.env.DB, userId)
+  return c.json({ ok: true, deleted })
+})
+
+notes.delete('/trash', async (c) => {
+  const userId = c.get('userId')
+  const body = await c.req.json<{ ids?: string[] }>()
+  if (!Array.isArray(body.ids) || body.ids.length === 0) {
+    return c.json({ error: 'Invalid delete payload' }, 400)
+  }
+
+  const deleted = await hardDeleteNotes(c.env.DB, userId, body.ids)
+  return c.json({ ok: true, deleted })
 })
 
 notes.get('/:id', async (c) => {

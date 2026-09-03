@@ -45,6 +45,12 @@ const router = createRouter({
           meta: { title: '日历' },
         },
         {
+          path: 'trash',
+          name: 'trash',
+          component: () => import('@/views/TrashView.vue'),
+          meta: { title: '回收站' },
+        },
+        {
           path: 'settings',
           name: 'settings',
           component: () => import('@/views/PlaceholderView.vue'),

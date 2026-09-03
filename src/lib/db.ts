@@ -15,6 +15,7 @@ export type NoteRow = {
   sort_order: number
   created_at: number
   updated_at: number
+  deleted_at: number | null
 }
 
 export type NoteListItem = {
@@ -25,6 +26,10 @@ export type NoteListItem = {
   sort_order: number
   created_at: number
   updated_at: number
+}
+
+export type TrashNoteItem = NoteListItem & {
+  deleted_at: number
 }
 
 export type NoteReorderUpdate = {
@@ -133,7 +138,7 @@ export async function listNotesByUser(db: D1Database, userId: string): Promise<N
     .prepare(
       `SELECT id, parent_id, title, icon, sort_order, created_at, updated_at
        FROM notes
-       WHERE user_id = ?
+       WHERE user_id = ? AND deleted_at IS NULL
        ORDER BY sort_order ASC, created_at ASC`,
     )
     .bind(userId)
@@ -151,6 +156,7 @@ export async function getNextSortOrder(
       `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
        FROM notes
        WHERE user_id = ?
+         AND deleted_at IS NULL
          AND (
            (parent_id IS NULL AND ? IS NULL)
            OR parent_id = ?
@@ -167,7 +173,7 @@ async function listNoteParentIds(
   userId: string,
 ): Promise<Array<{ id: string; parent_id: string | null }>> {
   const result = await db
-    .prepare('SELECT id, parent_id FROM notes WHERE user_id = ?')
+    .prepare('SELECT id, parent_id FROM notes WHERE user_id = ? AND deleted_at IS NULL')
     .bind(userId)
     .all<{ id: string; parent_id: string | null }>()
   return result.results ?? []
@@ -241,7 +247,7 @@ export async function reorderNotes(
           .prepare(
             `UPDATE notes
              SET sort_order = ?, parent_id = ?, updated_at = ?
-             WHERE id = ? AND user_id = ?`,
+             WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
           )
           .bind(index, update.parent_id, timestamp, noteId, userId),
       )
@@ -262,9 +268,9 @@ export async function findNoteById(
 ): Promise<NoteRow | null> {
   return db
     .prepare(
-      `SELECT id, user_id, parent_id, title, content, icon, sort_order, created_at, updated_at
+      `SELECT id, user_id, parent_id, title, content, icon, sort_order, created_at, updated_at, deleted_at
        FROM notes
-       WHERE id = ? AND user_id = ?`,
+       WHERE id = ? AND user_id = ? AND deleted_at IS NULL`,
     )
     .bind(noteId, userId)
     .first<NoteRow>()
@@ -333,19 +339,149 @@ export async function updateNote(
   values.push(noteId, userId)
 
   const result = await db
-    .prepare(`UPDATE notes SET ${sets.join(', ')} WHERE id = ? AND user_id = ?`)
+    .prepare(`UPDATE notes SET ${sets.join(', ')} WHERE id = ? AND user_id = ? AND deleted_at IS NULL`)
     .bind(...values)
     .run()
 
   return (result.meta.changes ?? 0) > 0
 }
 
+function collectDescendantIds(
+  notes: Array<{ id: string; parent_id: string | null }>,
+  rootId: string,
+): string[] {
+  const childrenByParent = new Map<string | null, string[]>()
+  for (const note of notes) {
+    const siblings = childrenByParent.get(note.parent_id) ?? []
+    siblings.push(note.id)
+    childrenByParent.set(note.parent_id, siblings)
+  }
+
+  const ids: string[] = []
+  const queue = [rootId]
+  while (queue.length > 0) {
+    const current = queue.shift()!
+    ids.push(current)
+    const children = childrenByParent.get(current) ?? []
+    queue.push(...children)
+  }
+
+  return ids
+}
+
 export async function deleteNote(db: D1Database, userId: string, noteId: string): Promise<boolean> {
+  const note = await findNoteById(db, userId, noteId)
+  if (!note) {
+    return false
+  }
+
+  const activeNotes = await listNoteParentIds(db, userId)
+  const idsToDelete = collectDescendantIds(activeNotes, noteId)
+  if (idsToDelete.length === 0) {
+    return false
+  }
+
+  const timestamp = now()
+  const placeholders = idsToDelete.map(() => '?').join(', ')
   const result = await db
-    .prepare('DELETE FROM notes WHERE id = ? AND user_id = ?')
-    .bind(noteId, userId)
+    .prepare(
+      `UPDATE notes
+       SET deleted_at = ?, updated_at = ?
+       WHERE user_id = ? AND deleted_at IS NULL AND id IN (${placeholders})`,
+    )
+    .bind(timestamp, timestamp, userId, ...idsToDelete)
     .run()
+
   return (result.meta.changes ?? 0) > 0
+}
+
+export async function listTrashByUser(db: D1Database, userId: string): Promise<TrashNoteItem[]> {
+  const result = await db
+    .prepare(
+      `SELECT id, parent_id, title, icon, sort_order, created_at, updated_at, deleted_at
+       FROM notes
+       WHERE user_id = ? AND deleted_at IS NOT NULL
+       ORDER BY deleted_at DESC`,
+    )
+    .bind(userId)
+    .all<TrashNoteItem>()
+  return result.results ?? []
+}
+
+export async function restoreNotes(
+  db: D1Database,
+  userId: string,
+  noteIds: string[],
+): Promise<number> {
+  if (noteIds.length === 0) {
+    return 0
+  }
+
+  const trashedResult = await db
+    .prepare(
+      `SELECT id, parent_id
+       FROM notes
+       WHERE user_id = ? AND deleted_at IS NOT NULL`,
+    )
+    .bind(userId)
+    .all<{ id: string; parent_id: string | null }>()
+  const trashedNotes = trashedResult.results ?? []
+  const trashedIds = new Set(trashedNotes.map((note) => note.id))
+  const idsToRestore = noteIds.filter((id) => trashedIds.has(id))
+  if (idsToRestore.length === 0) {
+    return 0
+  }
+
+  const timestamp = now()
+  const statements = []
+
+  for (const noteId of idsToRestore) {
+    const note = trashedNotes.find((item) => item.id === noteId)
+    const parentId =
+      note?.parent_id && trashedIds.has(note.parent_id) ? null : (note?.parent_id ?? null)
+
+    statements.push(
+      db
+        .prepare(
+          `UPDATE notes
+           SET deleted_at = NULL, parent_id = ?, updated_at = ?
+           WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`,
+        )
+        .bind(parentId, timestamp, noteId, userId),
+    )
+  }
+
+  await db.batch(statements)
+  return idsToRestore.length
+}
+
+export async function hardDeleteNotes(
+  db: D1Database,
+  userId: string,
+  noteIds: string[],
+): Promise<number> {
+  if (noteIds.length === 0) {
+    return 0
+  }
+
+  const placeholders = noteIds.map(() => '?').join(', ')
+  const result = await db
+    .prepare(
+      `DELETE FROM notes
+       WHERE user_id = ? AND deleted_at IS NOT NULL AND id IN (${placeholders})`,
+    )
+    .bind(userId, ...noteIds)
+    .run()
+
+  return result.meta.changes ?? 0
+}
+
+export async function emptyTrash(db: D1Database, userId: string): Promise<number> {
+  const result = await db
+    .prepare('DELETE FROM notes WHERE user_id = ? AND deleted_at IS NOT NULL')
+    .bind(userId)
+    .run()
+  return result.meta.changes ?? 0
 }
 
 export async function isValidParent(
