@@ -7,10 +7,11 @@
 		"dev:web": "pnpm --filter web dev",
 		"build": "pnpm --filter web build",
 		"build:web": "pnpm --filter web build",
-		"deploy": "pnpm build && wrangler deploy --minify",
+		"deploy": "pnpm build && pnpm db:migrations:apply && wrangler deploy --minify",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
-		"db:migrate:local": "wrangler d1 migrations apply yan-note-db --local",
-		"db:migrate:remote": "wrangler d1 migrations apply yan-note-db --remote"
+		"db:migrations:apply": "wrangler d1 migrations apply DB --remote",
+		"db:migrate:local": "wrangler d1 migrations apply DB --local",
+		"db:migrate:remote": "pnpm db:migrations:apply"
 	},
 	"dependencies": {
 		"hono": "^4.13.5"
