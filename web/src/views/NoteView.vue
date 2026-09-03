@@ -14,8 +14,6 @@ const notesStore = useNotesStore()
 
 const title = ref('')
 const initialContent = ref('')
-const noteLoaded = ref(false)
-const editorKey = ref(0)
 const editorRef = ref<InstanceType<typeof MilkdownEditorWrapper> | null>(null)
 const versionPanelRef = ref<InstanceType<typeof NoteVersionPanel> | null>(null)
 
@@ -50,7 +48,11 @@ const network = useNetworkStatus()
 const networkLabel = computed(() => networkStatusLabel(network.status.value))
 
 async function loadNote(id: string) {
-  noteLoaded.value = false
+  const cached = notesStore.notes.find((note) => note.id === id)
+  if (cached) {
+    title.value = cached.title
+  }
+
   await notesStore.fetchNote(id)
   title.value = notesStore.currentNote?.title ?? ''
   initialContent.value = notesStore.currentNote?.content ?? ''
@@ -58,8 +60,6 @@ async function loadNote(id: string) {
     title: title.value,
     content: initialContent.value,
   })
-  editorKey.value += 1
-  noteLoaded.value = true
 }
 
 watch(
@@ -73,7 +73,6 @@ watch(
     } else {
       title.value = ''
       initialContent.value = ''
-      noteLoaded.value = false
       sync.setBaseline({ title: '', content: '' })
     }
   },
@@ -171,15 +170,12 @@ function onVersionRestored() {
     />
 
     <MilkdownEditorWrapper
-      v-if="noteLoaded"
-      :key="`${noteId}-${editorKey}`"
       ref="editorRef"
       :initial-content="initialContent"
       :note-id="noteId"
       @dirty="onEditorDirty"
       @blur="onEditorBlur"
     />
-    <div v-else class="text-muted small py-3">加载中...</div>
   </div>
 </template>
 

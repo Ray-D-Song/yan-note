@@ -61,10 +61,14 @@ const { get, loading } = useEditor((root) => {
   return crepe
 })
 
-async function applyInitialContent() {
+async function applyInitialContent(force = false) {
   const editor = get()
   if (!editor || loading.value) {
     return false
+  }
+
+  if (hasAppliedInitialContent.value && !force) {
+    return true
   }
 
   isApplyingInitialContent.value = true
@@ -78,21 +82,30 @@ async function applyInitialContent() {
 }
 
 watch(
-  () => [loading.value, props.initialContent] as const,
-  async ([isLoading]) => {
-    if (isLoading || hasAppliedInitialContent.value) {
+  () => [loading.value, props.noteId, props.initialContent] as const,
+  async (current, previous) => {
+    const [isLoading, noteId, content] = current
+    const [wasLoading, prevNoteId, prevContent] = previous ?? [true, undefined, undefined]
+
+    slashMenuContext.noteId = noteId ?? null
+    if (isLoading || !noteId) {
       return
     }
-    await nextTick()
-    await applyInitialContent()
-  },
-  { immediate: true },
-)
 
-watch(
-  () => props.noteId,
-  (noteId) => {
-    slashMenuContext.noteId = noteId ?? null
+    const noteChanged = prevNoteId !== undefined && noteId !== prevNoteId
+    const contentChanged = content !== prevContent
+    const editorJustReady = wasLoading && !isLoading
+
+    if (!noteChanged && !contentChanged && !editorJustReady && hasAppliedInitialContent.value) {
+      return
+    }
+
+    if (noteChanged) {
+      hasAppliedInitialContent.value = false
+    }
+
+    await nextTick()
+    await applyInitialContent(noteChanged || contentChanged || editorJustReady)
   },
   { immediate: true },
 )

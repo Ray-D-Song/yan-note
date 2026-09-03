@@ -162,7 +162,7 @@ export const useNotesStore = defineStore('notes', () => {
         if (update.ordered_ids.length === 0 || !update.dragged_id) continue
         await moveNoteLocal(userId, update.dragged_id, update.parent_id, update.ordered_ids)
       }
-      scheduleSync(userId)
+      scheduleSync(userId, { reason: 'local_edit' })
     } catch {
       notes.value = snapshot
       throw new Error('Failed to reorder notes')

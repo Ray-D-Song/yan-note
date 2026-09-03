@@ -37,11 +37,17 @@ import type {
   SyncMeta,
   SyncResponse,
 } from '@/lib/sync/types'
+import {
+  IDLE_PULL_MS,
+  SCHEDULE_DEBOUNCE_MS,
+  shouldScheduleSync,
+  type SyncScheduleReason,
+} from '@/lib/sync/sync-scheduler'
 import type { IDBPDatabase } from 'idb'
 
 const SYNC_LOCK_NAME = 'yan-note-sync'
 const SYNC_CHANNEL = 'yan-note-sync'
-const SYNC_RETRY_MS = 10000
+const SYNC_INTERVAL_MS = IDLE_PULL_MS
 
 type SyncListener = () => void
 type SyncStateListener = (state: { error?: string | null; syncing?: boolean }) => void
@@ -54,15 +60,17 @@ let activeUserId: string | null = null
 const listeners = new Set<SyncListener>()
 const stateListeners = new Set<SyncStateListener>()
 
+let lastSyncAttemptAt = 0
+
 const onlineHandler = () => {
-  if (activeUserId) scheduleSync(activeUserId)
+  if (activeUserId) scheduleSync(activeUserId, { reason: 'online' })
 }
 const focusHandler = () => {
-  if (activeUserId) scheduleSync(activeUserId)
+  if (activeUserId) scheduleSync(activeUserId, { reason: 'focus' })
 }
 const visibilityHandler = () => {
   if (document.visibilityState === 'visible' && activeUserId) {
-    scheduleSync(activeUserId)
+    scheduleSync(activeUserId, { reason: 'visibility' })
   }
 }
 
@@ -364,6 +372,8 @@ export async function runSync(userId: string): Promise<{ ok: boolean; error?: st
     return { ok: false, error: 'offline_or_busy' }
   }
 
+  lastSyncAttemptAt = Date.now()
+
   const run = async (): Promise<{ ok: boolean; error?: string }> => {
     syncing = true
     emitSyncState({ syncing: true, error: null })
@@ -473,14 +483,41 @@ export async function runSync(userId: string): Promise<{ ok: boolean; error?: st
   return run()
 }
 
-export function scheduleSync(userId: string) {
+type ScheduleSyncOptions = {
+  reason?: SyncScheduleReason
+}
+
+async function maybeRunSync(userId: string, reason: SyncScheduleReason) {
+  const db = await openAccountDb(userId)
+  const meta = await getSyncMeta(db)
+  const [outbox, assets] = await Promise.all([getPendingOutbox(db), getPendingAssets(db)])
+  const now = Date.now()
+
+  if (
+    !shouldScheduleSync({
+      reason,
+      now,
+      lastSyncAt: meta?.last_sync_at ?? 0,
+      lastAttemptAt: lastSyncAttemptAt,
+      hasPendingOutbox: outbox.length > 0,
+      hasPendingAssets: assets.length > 0,
+    })
+  ) {
+    return
+  }
+
+  await runSync(userId)
+}
+
+export function scheduleSync(userId: string, options: ScheduleSyncOptions = {}) {
+  const reason = options.reason ?? 'manual'
   if (syncTimer !== null) {
     window.clearTimeout(syncTimer)
   }
   syncTimer = window.setTimeout(() => {
     syncTimer = null
-    void runSync(userId)
-  }, 100)
+    void maybeRunSync(userId, reason)
+  }, SCHEDULE_DEBOUNCE_MS)
 }
 
 export function stopSyncLoop() {
@@ -498,6 +535,7 @@ export function stopSyncLoop() {
   activeUserId = null
   clock = null
   syncing = false
+  lastSyncAttemptAt = 0
 }
 
 export function startSyncLoop(userId: string) {
@@ -512,9 +550,9 @@ export function startSyncLoop(userId: string) {
 
   syncInterval = window.setInterval(() => {
     if (navigator.onLine && activeUserId) {
-      scheduleSync(activeUserId)
+      scheduleSync(activeUserId, { reason: 'interval' })
     }
-  }, SYNC_RETRY_MS)
+  }, SYNC_INTERVAL_MS)
 
   return stopSyncLoop
 }

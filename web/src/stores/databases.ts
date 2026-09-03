@@ -78,7 +78,7 @@ export const useDatabasesStore = defineStore('databases', () => {
         row.cells[propertyId] = value
       }
     }
-    scheduleSync(getUserId())
+    scheduleSync(getUserId(), { reason: 'local_edit' })
   }
 
   function reset() {

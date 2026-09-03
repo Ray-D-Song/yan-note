@@ -98,7 +98,7 @@ export async function createNoteLocal(
   })
 
   await commitLocalWrite(db, { note, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
   return toNote(note, userId)
 }
 
@@ -140,7 +140,7 @@ export async function updateNoteLocal(
 
   const outbox = createOutboxEntry('note', id, 'patch', note.revision, changes)
   await commitLocalWrite(db, { note, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
   return toNote(note, userId)
 }
 
@@ -181,7 +181,7 @@ export async function moveNoteLocal(
     position_clock: clock,
   })
   await commitLocalWrite(db, { note, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
 }
 
 export async function deleteNoteLocal(userId: string, id: string) {
@@ -200,7 +200,7 @@ export async function deleteNoteLocal(userId: string, id: string) {
     await commitLocalWrite(db, { note, outbox })
   }
 
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
 }
 
 export async function restoreNotesLocal(userId: string, ids: string[]) {
@@ -213,7 +213,7 @@ export async function restoreNotesLocal(userId: string, ids: string[]) {
     const outbox = createOutboxEntry('note', id, 'restore', note.revision, {})
     await commitLocalWrite(db, { note, outbox })
   }
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
 }
 
 export async function hardDeleteNotesLocal(userId: string, ids: string[]) {
@@ -224,5 +224,5 @@ export async function hardDeleteNotesLocal(userId: string, ids: string[]) {
     const outbox = createOutboxEntry('note', id, 'purge', note.revision, {})
     await commitLocalDeleteWithOutbox(db, id, outbox)
   }
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
 }

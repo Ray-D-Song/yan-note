@@ -73,7 +73,7 @@ export async function createDatabaseLocal(
     note_id: database.note_id,
   })
   await commitLocalWrite(db, { database, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
   return toDatabaseView(database)
 }
 
@@ -97,7 +97,7 @@ export async function createRowLocal(userId: string, databaseId: string) {
     sort_order: sortOrder,
   })
   await commitLocalWrite(db, { database, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
   return database.rows[database.rows.length - 1]!
 }
 
@@ -130,7 +130,7 @@ export async function updateCellLocal(
     value_clock: clock,
   })
   await commitLocalWrite(db, { database, outbox })
-  scheduleSync(userId)
+  scheduleSync(userId, { reason: 'local_edit' })
 }
 
 export function parseDatabaseEntity(raw: Record<string, unknown>): LocalDatabase {

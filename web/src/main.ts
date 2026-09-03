@@ -27,7 +27,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'background-sync') {
       const userId = localStorage.getItem('yan-note:last-user-id')
-      if (userId) scheduleSync(userId)
+      if (userId) scheduleSync(userId, { reason: 'manual' })
     }
   })
 }

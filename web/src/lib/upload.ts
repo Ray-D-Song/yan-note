@@ -65,7 +65,7 @@ async function uploadAssetToCloud(userId: string, asset: LocalAsset) {
     }
     const db = await openAccountDb(userId)
     await markAssetUploaded(db, asset.id)
-    scheduleSync(userId)
+    scheduleSync(userId, { reason: 'local_edit' })
   } catch {
     // Will retry on next sync
   }
