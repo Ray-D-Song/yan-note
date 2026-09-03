@@ -16,7 +16,7 @@ type UseNoteSyncOptions = {
   debounceMs?: number
 }
 
-function snapshotsEqual(a: NoteSnapshot, b: NoteSnapshot): boolean {
+export function snapshotsEqual(a: NoteSnapshot, b: NoteSnapshot): boolean {
   return a.title === b.title && a.content === b.content
 }
 
@@ -24,6 +24,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
   const status = ref<SyncStatus>('local_saved')
   const lastSaved = ref<NoteSnapshot>({ title: '', content: '' })
   let timer: number | null = null
+  let flushQueue: Promise<boolean> = Promise.resolve(true)
 
   function clearTimer() {
     if (timer !== null) {
@@ -52,10 +53,10 @@ export function useNoteSync(options: UseNoteSyncOptions) {
     }, options.debounceMs ?? 300)
   }
 
-  async function flush(): Promise<boolean> {
+  async function doFlush(targetId?: string): Promise<boolean> {
     clearTimer()
 
-    const id = options.noteId.value
+    const id = targetId ?? options.noteId.value
     if (!id) {
       status.value = 'local_saved'
       return true
@@ -88,6 +89,12 @@ export function useNoteSync(options: UseNoteSyncOptions) {
       status.value = 'error'
       return false
     }
+  }
+
+  function flush(targetId?: string): Promise<boolean> {
+    const next = flushQueue.then(() => doFlush(targetId))
+    flushQueue = next.catch(() => false)
+    return next
   }
 
   function onVisibilityChange() {

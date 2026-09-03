@@ -61,7 +61,10 @@ const { get, loading } = useEditor((root) => {
   return crepe
 })
 
-async function applyInitialContent(force = false) {
+async function applyInitialContent(
+  force = false,
+  expected?: { noteId: string | null | undefined; content: string },
+) {
   const editor = get()
   if (!editor || loading.value) {
     return false
@@ -69,6 +72,13 @@ async function applyInitialContent(force = false) {
 
   if (hasAppliedInitialContent.value && !force) {
     return true
+  }
+
+  if (
+    expected &&
+    (props.noteId !== expected.noteId || props.initialContent !== expected.content)
+  ) {
+    return false
   }
 
   isApplyingInitialContent.value = true
@@ -104,8 +114,9 @@ watch(
       hasAppliedInitialContent.value = false
     }
 
+    const expected = { noteId, content }
     await nextTick()
-    await applyInitialContent(noteChanged || contentChanged || editorJustReady)
+    await applyInitialContent(noteChanged || contentChanged || editorJustReady, expected)
   },
   { immediate: true },
 )

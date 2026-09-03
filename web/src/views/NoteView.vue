@@ -47,15 +47,22 @@ const statusLabel = computed(() => syncStatusLabel(sync.status.value))
 const network = useNetworkStatus()
 const networkLabel = computed(() => networkStatusLabel(network.status.value))
 
+let loadGeneration = 0
+
 async function loadNote(id: string) {
+  const gen = ++loadGeneration
   const cached = notesStore.notes.find((note) => note.id === id)
   if (cached) {
     title.value = cached.title
   }
 
-  await notesStore.fetchNote(id)
-  title.value = notesStore.currentNote?.title ?? ''
-  initialContent.value = notesStore.currentNote?.content ?? ''
+  const note = await notesStore.fetchNote(id)
+  if (gen !== loadGeneration) {
+    return
+  }
+
+  title.value = note?.title ?? ''
+  initialContent.value = note?.content ?? ''
   sync.setBaseline({
     title: title.value,
     content: initialContent.value,
@@ -66,7 +73,7 @@ watch(
   noteId,
   async (id, previousId) => {
     if (previousId && previousId !== id) {
-      await sync.flush()
+      await sync.flush(previousId)
     }
     if (id) {
       await loadNote(id)

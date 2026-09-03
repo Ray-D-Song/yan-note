@@ -53,8 +53,8 @@ export const useNotesStore = defineStore('notes', () => {
     await refreshFromLocal()
   }
 
-  async function fetchNote(id: string) {
-    if (!userId) return
+  async function fetchNote(id: string): Promise<Note | null> {
+    if (!userId) return null
     loading.value = true
     try {
       const note = await loadNoteFromLocal(userId, id)
@@ -78,6 +78,7 @@ export const useNotesStore = defineStore('notes', () => {
           notes.value.push(listItem)
         }
       }
+      return note
     } finally {
       loading.value = false
     }
