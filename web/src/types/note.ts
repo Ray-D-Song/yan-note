@@ -9,6 +9,8 @@ export interface NoteListItem {
   title: string
   icon: string | null
   sort_order: number
+  position_key: string
+  revision: number
   created_at: number
   updated_at: number
 }
@@ -29,13 +31,15 @@ export interface NoteTreeNode extends NoteListItem {
 export interface NoteReorderUpdate {
   parent_id: string | null
   ordered_ids: string[]
+  dragged_id: string
 }
 
 export function compareNotes(a: NoteListItem, b: NoteListItem): number {
-  if (a.sort_order !== b.sort_order) {
-    return a.sort_order - b.sort_order
+  const posCmp = a.position_key.localeCompare(b.position_key)
+  if (posCmp !== 0) {
+    return posCmp
   }
-  return a.created_at - b.created_at
+  return a.id.localeCompare(b.id)
 }
 
 function sortTreeNodes(nodes: NoteTreeNode[]): NoteTreeNode[] {

@@ -7,17 +7,24 @@
 		"dev:web": "pnpm --filter web dev",
 		"build": "pnpm --filter web build",
 		"build:web": "pnpm --filter web build",
-		"deploy": "pnpm build && pnpm db:migrations:apply && wrangler deploy --minify",
+		"deploy": "pnpm build && pnpm db:verify:pre && pnpm db:migrations:apply && pnpm db:verify:post && wrangler deploy --minify",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:migrations:apply": "wrangler d1 migrations apply DB --remote",
 		"db:migrate:local": "wrangler d1 migrations apply DB --local",
-		"db:migrate:remote": "pnpm db:migrations:apply"
+		"db:migrate:remote": "pnpm db:migrations:apply",
+		"db:verify:pre": "node --experimental-strip-types scripts/verify-migration-preconditions.mts --remote",
+		"db:verify:post": "node --experimental-strip-types scripts/verify-migration-postconditions.mts --remote",
+		"test": "node --experimental-strip-types scripts/generate-test-migrations.mts && vitest run --config vitest.config.mts && vitest run --config vitest.scripts.config.mts",
+		"test:web": "pnpm --filter web test:unit"
 	},
 	"dependencies": {
+		"fractional-indexing": "^4.0.0",
 		"hono": "^4.13.5"
 	},
 	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.22.0",
 		"@types/node": "^26.4.0",
+		"vitest": "~4.1.11",
 		"wrangler": "^4.127.1"
 	}
 }

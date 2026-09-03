@@ -3,7 +3,7 @@ import { inject, provide, type InjectionKey, type Ref } from 'vue'
 import type { NoteListItem, NoteReorderUpdate } from '@/types/note'
 
 type ReorderQueueContext = {
-  queueReorder: (parentId: string | null, orderedIds: string[]) => void
+  queueReorder: (parentId: string | null, orderedIds: string[], draggedId: string) => void
 }
 
 const reorderQueueKey: InjectionKey<ReorderQueueContext> = Symbol('noteTreeReorderQueue')
@@ -14,10 +14,11 @@ export function provideNoteTreeReorderQueue(
   const pending = new Map<string, NoteReorderUpdate>()
   let timer: number | null = null
 
-  function queueReorder(parentId: string | null, orderedIds: string[]) {
+  function queueReorder(parentId: string | null, orderedIds: string[], draggedId: string) {
     pending.set(parentId ?? '__root__', {
       parent_id: parentId,
       ordered_ids: orderedIds,
+      dragged_id: draggedId,
     })
 
     if (timer !== null) {

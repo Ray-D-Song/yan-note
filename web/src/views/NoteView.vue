@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import NoteVersionPanel from '@/components/note/NoteVersionPanel.vue'
 import MilkdownEditorWrapper from '@/components/editor/MilkdownEditorWrapper.vue'
 import NoteIcon from '@/components/common/NoteIcon.vue'
 import { networkStatusLabel, useNetworkStatus } from '@/composables/useNetworkStatus'
@@ -16,6 +17,7 @@ const initialContent = ref('')
 const noteLoaded = ref(false)
 const editorKey = ref(0)
 const editorRef = ref<InstanceType<typeof MilkdownEditorWrapper> | null>(null)
+const versionPanelRef = ref<InstanceType<typeof NoteVersionPanel> | null>(null)
 
 const noteId = computed(() =>
   typeof route.params.id === 'string' ? route.params.id : null,
@@ -108,6 +110,11 @@ function onEditorDirty() {
 function onEditorBlur() {
   void sync.flush()
 }
+
+function onVersionRestored() {
+  if (!noteId.value) return
+  void loadNote(noteId.value)
+}
 </script>
 
 <template>
@@ -134,6 +141,14 @@ function onEditorBlur() {
         </ol>
       </nav>
       <div class="d-flex align-items-center gap-2 small">
+        <NoteVersionPanel
+          v-if="noteId"
+          ref="versionPanelRef"
+          :note-id="noteId"
+          :current-title="title"
+          :current-content="initialContent"
+          @restored="onVersionRestored"
+        />
         <span
           v-if="networkLabel"
           class="text-muted"

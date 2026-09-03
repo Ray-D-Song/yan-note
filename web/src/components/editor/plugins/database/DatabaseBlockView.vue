@@ -10,18 +10,14 @@ const loading = ref(false)
 const databaseId = computed(() => String(node.value.attrs.databaseId ?? ''))
 
 const database = computed(() =>
-  databasesStore.currentDatabase?.id === databaseId.value
-    ? databasesStore.currentDatabase
-    : databasesStore.databases.find((item) => item.id === databaseId.value) ?? null,
+  databaseId.value ? databasesStore.getCached(databaseId.value) : null,
 )
 
-const rows = computed(() => databasesStore.currentRows)
-const properties = computed(() => databasesStore.currentProperties)
+const rows = computed(() => database.value?.rows ?? [])
+const properties = computed(() => database.value?.properties ?? [])
 
 async function loadDatabase() {
-  if (!databaseId.value) {
-    return
-  }
+  if (!databaseId.value) return
   loading.value = true
   try {
     await databasesStore.fetchDatabase(databaseId.value)
@@ -31,16 +27,12 @@ async function loadDatabase() {
 }
 
 async function addRow() {
-  if (!databaseId.value) {
-    return
-  }
+  if (!databaseId.value) return
   await databasesStore.createRow(databaseId.value)
 }
 
 async function updateCell(rowId: string, propertyId: string, value: string) {
-  if (!databaseId.value) {
-    return
-  }
+  if (!databaseId.value) return
   await databasesStore.updateCell(databaseId.value, rowId, propertyId, value)
 }
 

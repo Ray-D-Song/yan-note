@@ -1,7 +1,7 @@
 import { onBeforeUnmount, onMounted, ref, type Ref } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
 
-export type SyncStatus = 'saved' | 'dirty' | 'saving' | 'error'
+export type SyncStatus = 'local_saved' | 'dirty' | 'saving' | 'error'
 
 export type NoteSnapshot = {
   title: string
@@ -21,7 +21,7 @@ function snapshotsEqual(a: NoteSnapshot, b: NoteSnapshot): boolean {
 }
 
 export function useNoteSync(options: UseNoteSyncOptions) {
-  const status = ref<SyncStatus>('saved')
+  const status = ref<SyncStatus>('local_saved')
   const lastSaved = ref<NoteSnapshot>({ title: '', content: '' })
   let timer: number | null = null
 
@@ -34,7 +34,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
 
   function setBaseline(snapshot: NoteSnapshot) {
     lastSaved.value = { ...snapshot }
-    status.value = 'saved'
+    status.value = 'local_saved'
     clearTimer()
   }
 
@@ -49,7 +49,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
     clearTimer()
     timer = window.setTimeout(() => {
       void flush()
-    }, options.debounceMs ?? 800)
+    }, options.debounceMs ?? 300)
   }
 
   async function flush(): Promise<boolean> {
@@ -57,7 +57,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
 
     const id = options.noteId.value
     if (!id) {
-      status.value = 'saved'
+      status.value = 'local_saved'
       return true
     }
 
@@ -74,7 +74,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
     }
 
     if (snapshotsEqual(snapshot, lastSaved.value)) {
-      status.value = 'saved'
+      status.value = 'local_saved'
       return true
     }
 
@@ -82,7 +82,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
     try {
       await options.save(id, snapshot)
       lastSaved.value = { ...snapshot }
-      status.value = 'saved'
+      status.value = 'local_saved'
       return true
     } catch {
       status.value = 'error'
@@ -91,7 +91,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
   }
 
   function onVisibilityChange() {
-    if (document.visibilityState === 'hidden' && status.value !== 'saved') {
+    if (document.visibilityState === 'hidden' && status.value !== 'local_saved') {
       void flush()
     }
   }
@@ -106,7 +106,7 @@ export function useNoteSync(options: UseNoteSyncOptions) {
   })
 
   onBeforeRouteLeave(async () => {
-    if (status.value === 'saved') {
+    if (status.value === 'local_saved') {
       return true
     }
     return flush()
@@ -122,10 +122,10 @@ export function useNoteSync(options: UseNoteSyncOptions) {
 
 export function syncStatusLabel(status: SyncStatus): string {
   switch (status) {
-    case 'saved':
-      return '已保存'
+    case 'local_saved':
+      return '已保存到本机'
     case 'dirty':
-      return '未保存'
+      return '编辑中'
     case 'saving':
       return '保存中...'
     case 'error':

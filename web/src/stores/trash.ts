@@ -1,45 +1,49 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import {
+  hardDeleteNotesLocal,
+  loadTrashFromLocal,
+  restoreNotesLocal,
+} from '@/lib/local-notes'
+import { getLastUserId } from '@/lib/sync/device-id'
 import type { TrashNoteItem } from '@/types/note'
 
 export const useTrashStore = defineStore('trash', () => {
   const items = ref<TrashNoteItem[]>([])
   const loading = ref(false)
 
+  function getUserId(): string {
+    const id = getLastUserId()
+    if (!id) throw new Error('Not initialized')
+    return id
+  }
+
   async function fetchTrash() {
     loading.value = true
     try {
-      items.value = await apiRequest<TrashNoteItem[]>('/notes/trash')
+      items.value = await loadTrashFromLocal(getUserId())
     } finally {
       loading.value = false
     }
   }
 
   async function restoreSelected(ids: string[]) {
-    const result = await apiRequest<{ ok: boolean; restored: number }>('/notes/trash/restore', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    })
+    await restoreNotesLocal(getUserId(), ids)
     await fetchTrash()
-    return result.restored
+    return ids.length
   }
 
   async function hardDeleteSelected(ids: string[]) {
-    const result = await apiRequest<{ ok: boolean; deleted: number }>('/notes/trash', {
-      method: 'DELETE',
-      body: JSON.stringify({ ids }),
-    })
+    await hardDeleteNotesLocal(getUserId(), ids)
     await fetchTrash()
-    return result.deleted
+    return ids.length
   }
 
   async function emptyTrash() {
-    const result = await apiRequest<{ ok: boolean; deleted: number }>('/notes/trash/all', {
-      method: 'DELETE',
-    })
+    const allIds = items.value.map((item) => item.id)
+    await hardDeleteNotesLocal(getUserId(), allIds)
     await fetchTrash()
-    return result.deleted
+    return allIds.length
   }
 
   return {

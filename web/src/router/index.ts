@@ -63,11 +63,16 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
   if (!auth.initialized) {
-    await auth.fetchMe()
+    await auth.initLocalFirst()
+    void auth.fetchMe()
   }
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+  if (to.meta.requiresAuth) {
+    if (auth.isAuthenticated || auth.canUseLocal) {
+      return true
+    }
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 

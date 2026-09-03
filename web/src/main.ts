@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { setupPwaUpdate } from './composables/usePwaUpdate'
+import { scheduleSync } from './lib/sync/engine'
 import { useThemeStore } from './stores/theme'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -21,5 +22,14 @@ app.use(router)
 useThemeStore(pinia).bindSystemPreference()
 
 setupPwaUpdate()
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'background-sync') {
+      const userId = localStorage.getItem('yan-note:last-user-id')
+      if (userId) scheduleSync(userId)
+    }
+  })
+}
 
 app.mount('#app')

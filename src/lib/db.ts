@@ -1,3 +1,5 @@
+import { parseHLC } from './hlc'
+
 export type UserRow = {
   id: string
   email: string
@@ -24,6 +26,8 @@ export type NoteListItem = {
   title: string
   icon: string | null
   sort_order: number
+  position_key: string
+  revision: number
   created_at: number
   updated_at: number
 }
@@ -88,19 +92,29 @@ export type DatabaseProperty = {
   sort_order: number
 }
 
+export type DatabaseViewCell = {
+  value: string
+  revision: number
+  value_clock: import('./hlc').HLC | null
+}
+
 export type DatabaseViewRow = {
   id: string
   sort_order: number
-  cells: Record<string, string>
+  revision: number
+  cells: Record<string, DatabaseViewCell>
 }
 
 export type DatabaseView = {
   id: string
   note_id: string | null
   title: string
+  revision: number
+  created_at: number
   properties: DatabaseProperty[]
   rows: DatabaseViewRow[]
   updated_at: number
+  title_clock: import('./hlc').HLC | null
 }
 
 export function now(): number {
@@ -136,10 +150,10 @@ export async function createUser(
 export async function listNotesByUser(db: D1Database, userId: string): Promise<NoteListItem[]> {
   const result = await db
     .prepare(
-      `SELECT id, parent_id, title, icon, sort_order, created_at, updated_at
+      `SELECT id, parent_id, title, icon, sort_order, position_key, revision, created_at, updated_at
        FROM notes
        WHERE user_id = ? AND deleted_at IS NULL
-       ORDER BY sort_order ASC, created_at ASC`,
+       ORDER BY position_key ASC, id ASC`,
     )
     .bind(userId)
     .all<NoteListItem>()
@@ -545,42 +559,41 @@ export async function findDatabaseById(
   db: D1Database,
   userId: string,
   databaseId: string,
-): Promise<DatabaseRow | null> {
+): Promise<(DatabaseRow & { revision: number; title_clock: string | null }) | null> {
   return db
     .prepare(
-      `SELECT id, user_id, note_id, title, created_at, updated_at
+      `SELECT id, user_id, note_id, title, revision, created_at, updated_at, title_clock
        FROM databases
        WHERE id = ? AND user_id = ?`,
     )
     .bind(databaseId, userId)
-    .first<DatabaseRow>()
+    .first<DatabaseRow & { revision: number; title_clock: string | null }>()
 }
 
-async function ensureDefaultProperties(db: D1Database, databaseId: string): Promise<void> {
+export function defaultPropertyStatements(db: D1Database, databaseId: string): D1PreparedStatement[] {
+  return [
+    db.prepare(
+      `INSERT INTO database_properties (id, database_id, name, type, config, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).bind(`${databaseId}-title`, databaseId, '名称', 'text', null, 0),
+    db.prepare(
+      `INSERT INTO database_properties (id, database_id, name, type, config, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).bind(`${databaseId}-status`, databaseId, '状态', 'text', null, 1),
+  ]
+}
+
+export async function ensureDefaultPropertiesForSync(db: D1Database, databaseId: string): Promise<void> {
   const existing = await db
     .prepare('SELECT id FROM database_properties WHERE database_id = ? LIMIT 1')
     .bind(databaseId)
     .first<{ id: string }>()
+  if (existing) return
+  await db.batch(defaultPropertyStatements(db, databaseId))
+}
 
-  if (existing) {
-    return
-  }
-
-  const timestamp = now()
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO database_properties (id, database_id, name, type, config, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(`${databaseId}-title`, databaseId, '名称', 'text', null, 0),
-    db
-      .prepare(
-        `INSERT INTO database_properties (id, database_id, name, type, config, sort_order)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .bind(`${databaseId}-status`, databaseId, '状态', 'text', null, 1),
-  ])
+async function ensureDefaultProperties(db: D1Database, databaseId: string): Promise<void> {
+  await ensureDefaultPropertiesForSync(db, databaseId)
 }
 
 export async function createDatabase(
@@ -651,7 +664,6 @@ export async function createDatabaseRow(
     .all<{ id: string }>()
 
   const propertyIds = properties.results ?? []
-  const cells: Record<string, string> = {}
 
   const statements = [
     db
@@ -666,7 +678,6 @@ export async function createDatabaseRow(
   ]
 
   for (const property of propertyIds) {
-    cells[property.id] = ''
     statements.push(
       db
         .prepare(
@@ -682,7 +693,10 @@ export async function createDatabaseRow(
   return {
     id: rowId,
     sort_order: sortOrder,
-    cells,
+    revision: 1,
+    cells: Object.fromEntries(
+      propertyIds.map((p) => [p.id, { value: '', revision: 1, value_clock: null }]),
+    ),
   }
 }
 
@@ -735,28 +749,32 @@ export async function getDatabaseView(
 
   const rowsResult = await db
     .prepare(
-      `SELECT id, sort_order
+      `SELECT id, sort_order, revision
        FROM database_rows
        WHERE database_id = ?
        ORDER BY sort_order ASC, created_at ASC`,
     )
     .bind(databaseId)
-    .all<{ id: string; sort_order: number }>()
+    .all<{ id: string; sort_order: number; revision: number }>()
 
   const cellsResult = await db
     .prepare(
-      `SELECT c.row_id, c.property_id, c.value
+      `SELECT c.row_id, c.property_id, c.value, c.revision, c.value_clock
        FROM database_cells c
        JOIN database_rows r ON r.id = c.row_id
        WHERE r.database_id = ?`,
     )
     .bind(databaseId)
-    .all<{ row_id: string; property_id: string; value: string }>()
+    .all<{ row_id: string; property_id: string; value: string; revision: number; value_clock: string | null }>()
 
-  const cellsByRow = new Map<string, Record<string, string>>()
+  const cellsByRow = new Map<string, Record<string, DatabaseViewCell>>()
   for (const cell of cellsResult.results ?? []) {
     const rowCells = cellsByRow.get(cell.row_id) ?? {}
-    rowCells[cell.property_id] = cell.value
+    rowCells[cell.property_id] = {
+      value: cell.value,
+      revision: cell.revision,
+      value_clock: parseHLC(cell.value_clock),
+    }
     cellsByRow.set(cell.row_id, rowCells)
   }
 
@@ -764,11 +782,15 @@ export async function getDatabaseView(
     id: database.id,
     note_id: database.note_id,
     title: database.title,
+    revision: database.revision,
+    created_at: database.created_at,
     updated_at: database.updated_at,
+    title_clock: parseHLC(database.title_clock),
     properties: propertiesResult.results ?? [],
     rows: (rowsResult.results ?? []).map((row) => ({
       id: row.id,
       sort_order: row.sort_order,
+      revision: row.revision,
       cells: cellsByRow.get(row.id) ?? {},
     })),
   }

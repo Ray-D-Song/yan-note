@@ -13,8 +13,12 @@ export default defineConfig({
     vueJsx(),
     vueDevTools(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'pwa-192.png', 'pwa-512.png'],
+      injectRegister: 'auto',
+      includeAssets: ['favicon.ico', 'favicon.svg', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
         name: 'Yan',
         short_name: 'Yan',
@@ -42,43 +46,14 @@ export default defineConfig({
           },
         ],
       },
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       workbox: {
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        runtimeCaching: [
-          {
-            urlPattern: ({ url, request }) =>
-              request.method === 'GET' && url.pathname === '/api/v1/notes',
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'yan-notes-list',
-              expiration: {
-                maxEntries: 1,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-              cacheableResponse: {
-                statuses: [200],
-              },
-            },
-          },
-          {
-            urlPattern: ({ url, request }) =>
-              request.method === 'GET' &&
-              /^\/api\/v1\/notes\/[^/]+$/.test(url.pathname),
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'yan-note-detail',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
-              },
-              cacheableResponse: {
-                statuses: [200],
-              },
-            },
-          },
-        ],
+        runtimeCaching: [],
       },
       devOptions: {
         enabled: false,
@@ -100,6 +75,6 @@ export default defineConfig({
   },
   build: {
     outDir: '../public',
-    emptyOutDir: false,
+    emptyOutDir: true,
   },
 })

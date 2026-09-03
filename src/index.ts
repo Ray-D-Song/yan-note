@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import authRoutes from './routes/auth'
 import databasesRoutes from './routes/databases'
 import notesRoutes from './routes/notes'
+import syncRoutes, { noteVersions } from './routes/sync'
 import uploadsRoutes from './routes/uploads'
 import type { AuthVariables } from './middleware/auth'
 
@@ -19,7 +20,9 @@ app.use(
 const v1 = new Hono<{ Bindings: CloudflareBindings; Variables: AuthVariables }>()
 
 v1.route('/auth', authRoutes)
+v1.route('/notes', noteVersions)
 v1.route('/notes', notesRoutes)
+v1.route('/sync', syncRoutes)
 v1.route('/databases', databasesRoutes)
 v1.route('/uploads', uploadsRoutes)
 

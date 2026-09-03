@@ -32,7 +32,6 @@ lerna-debug.log*
 
 # misc
 .DS_Store
-
-.dev.vars*
+test/d1-migrations.json
 !.dev.vars.example
 !.env.example

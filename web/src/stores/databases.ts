@@ -1,53 +1,67 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { apiRequest } from '@/api/client'
+import {
+  createDatabaseLocal,
+  createRowLocal,
+  loadAllDatabasesFromLocal,
+  loadDatabaseFromLocal,
+  updateCellLocal,
+} from '@/lib/local-databases'
+import { onSyncDataChanged, scheduleSync } from '@/lib/sync/engine'
+import { getLastUserId } from '@/lib/sync/device-id'
 import type { Database, DatabaseListItem, DatabaseRow } from '@/types/database'
 
 export const useDatabasesStore = defineStore('databases', () => {
-  const databases = ref<DatabaseListItem[]>([])
-  const currentDatabase = ref<Database | null>(null)
-  const currentProperties = ref<Database['properties']>([])
-  const currentRows = ref<DatabaseRow[]>([])
+  const cache = ref<Map<string, Database>>(new Map())
+  const loadingIds = ref<Set<string>>(new Set())
 
-  async function fetchDatabase(id: string) {
-    const database = await apiRequest<Database>(`/databases/${id}`)
-    currentDatabase.value = database
-    currentProperties.value = database.properties
-    currentRows.value = database.rows
-    return database
+  function getUserId(): string {
+    const id = getLastUserId()
+    if (!id) throw new Error('Not initialized')
+    return id
   }
 
-  async function createDatabase(payload: {
-    title?: string
-    note_id?: string | null
-  }) {
-    const database = await apiRequest<Database>('/databases', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+  function getCached(id: string): Database | null {
+    return cache.value.get(id) ?? null
+  }
+
+  async function fetchDatabase(id: string) {
+    loadingIds.value.add(id)
+    try {
+      const database = await loadDatabaseFromLocal(getUserId(), id)
+      if (database) {
+        cache.value.set(id, database)
+      }
+      return database
+    } finally {
+      loadingIds.value.delete(id)
+    }
+  }
+
+  async function refreshAll() {
+    const all = await loadAllDatabasesFromLocal(getUserId())
+    for (const db of all) {
+      cache.value.set(db.id, db)
+    }
+  }
+
+  async function init() {
+    await refreshAll()
+    onSyncDataChanged(() => {
+      void refreshAll()
     })
-    databases.value.unshift({
-      id: database.id,
-      note_id: database.note_id,
-      title: database.title,
-      updated_at: database.updated_at,
-    })
-    currentDatabase.value = database
-    currentProperties.value = database.properties
-    currentRows.value = database.rows
+  }
+
+  async function createDatabase(payload: { title?: string; note_id?: string | null }) {
+    const database = await createDatabaseLocal(getUserId(), payload)
+    cache.value.set(database.id, database)
     return database
   }
 
   async function createRow(databaseId: string) {
-    const response = await apiRequest<{ row: DatabaseRow; database: Database }>(
-      `/databases/${databaseId}/rows`,
-      { method: 'POST' },
-    )
-    if (currentDatabase.value?.id === databaseId) {
-      currentDatabase.value = response.database
-      currentRows.value = response.database.rows
-      currentProperties.value = response.database.properties
-    }
-    return response.row
+    const row = await createRowLocal(getUserId(), databaseId)
+    await fetchDatabase(databaseId)
+    return row
   }
 
   async function updateCell(
@@ -56,32 +70,33 @@ export const useDatabasesStore = defineStore('databases', () => {
     propertyId: string,
     value: string,
   ) {
-    await apiRequest<{ ok: boolean }>(
-      `/databases/${databaseId}/rows/${rowId}/cells/${propertyId}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ value }),
-      },
-    )
-
-    if (currentDatabase.value?.id !== databaseId) {
-      return
+    await updateCellLocal(getUserId(), databaseId, rowId, propertyId, value)
+    const cached = cache.value.get(databaseId)
+    if (cached) {
+      const row = cached.rows.find((item) => item.id === rowId)
+      if (row) {
+        row.cells[propertyId] = value
+      }
     }
+    scheduleSync(getUserId())
+  }
 
-    const row = currentRows.value.find((item) => item.id === rowId)
-    if (row) {
-      row.cells[propertyId] = value
-    }
+  function reset() {
+    cache.value = new Map()
+    loadingIds.value = new Set()
   }
 
   return {
-    databases,
-    currentDatabase,
-    currentProperties,
-    currentRows,
+    cache,
+    loadingIds,
+    getCached,
     fetchDatabase,
     createDatabase,
     createRow,
     updateCell,
+    init,
+    reset,
   }
 })
+
+export type { DatabaseListItem, DatabaseRow }

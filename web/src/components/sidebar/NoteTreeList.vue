@@ -16,6 +16,7 @@ const notes = useNoteTreeNotes()
 const expandNode = inject<(id: string) => void>('noteTreeExpandNode')!
 
 const list = ref<NoteTreeNode[]>([])
+const pendingDragId = ref<string | null>(null)
 
 watch(
   () => props.nodes,
@@ -25,10 +26,11 @@ watch(
   { immediate: true },
 )
 
-function onListChange() {
+function onListChange(draggedId: string) {
   queueReorder(
     props.parentId,
     list.value.map((node) => node.id),
+    draggedId,
   )
 }
 
@@ -36,7 +38,15 @@ function onAdd() {
   if (props.parentId) {
     expandNode(props.parentId)
   }
-  onListChange()
+  const draggedId = pendingDragId.value
+  pendingDragId.value = null
+  if (draggedId) onListChange(draggedId)
+}
+
+function onUpdate() {
+  const draggedId = pendingDragId.value
+  pendingDragId.value = null
+  if (draggedId) onListChange(draggedId)
 }
 
 function onMove(event: { draggedContext?: { element?: NoteTreeNode } }): boolean {
@@ -44,6 +54,8 @@ function onMove(event: { draggedContext?: { element?: NoteTreeNode } }): boolean
   if (!dragged?.id) {
     return true
   }
+
+  pendingDragId.value = dragged.id
 
   const targetParentId = props.parentId
   if (targetParentId === dragged.id) {
@@ -55,6 +67,10 @@ function onMove(event: { draggedContext?: { element?: NoteTreeNode } }): boolean
   }
 
   return true
+}
+
+function onDragEnd() {
+  pendingDragId.value = null
 }
 </script>
 
@@ -73,8 +89,8 @@ function onMove(event: { draggedContext?: { element?: NoteTreeNode } }): boolean
     drag-class="note-tree-drag"
     :move="onMove"
     @add="onAdd"
-    @update="onListChange"
-    @remove="onListChange"
+    @update="onUpdate"
+    @end="onDragEnd"
   >
     <NoteTreeItem v-for="element in list" :key="element.id" :node="element" />
   </VueDraggable>

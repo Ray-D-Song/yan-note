@@ -15,6 +15,8 @@ function makeNote(
     title: overrides.id,
     icon: null,
     sort_order: 0,
+    position_key: 'a00000000',
+    revision: 1,
     created_at: 0,
     updated_at: 0,
     ...overrides,
@@ -22,28 +24,28 @@ function makeNote(
 }
 
 describe('compareNotes', () => {
-  it('sorts by sort_order ascending', () => {
-    const a = makeNote({ id: 'a', sort_order: 1, created_at: 100 })
-    const b = makeNote({ id: 'b', sort_order: 2, created_at: 50 })
+  it('sorts by position_key ascending', () => {
+    const a = makeNote({ id: 'a', position_key: 'a00000001' })
+    const b = makeNote({ id: 'b', position_key: 'a00000002' })
     expect(compareNotes(a, b)).toBeLessThan(0)
     expect(compareNotes(b, a)).toBeGreaterThan(0)
   })
 
-  it('breaks ties with created_at ascending', () => {
-    const older = makeNote({ id: 'older', sort_order: 0, created_at: 100 })
-    const newer = makeNote({ id: 'newer', sort_order: 0, created_at: 200 })
-    expect(compareNotes(older, newer)).toBeLessThan(0)
-    expect(compareNotes(newer, older)).toBeGreaterThan(0)
+  it('breaks ties with id ascending', () => {
+    const a = makeNote({ id: 'aaa', position_key: 'a0' })
+    const b = makeNote({ id: 'bbb', position_key: 'a0' })
+    expect(compareNotes(a, b)).toBeLessThan(0)
+    expect(compareNotes(b, a)).toBeGreaterThan(0)
   })
 })
 
 describe('buildNoteTree', () => {
-  it('sorts siblings at each level by sort_order then created_at', () => {
+  it('sorts siblings at each level by position_key then id', () => {
     const notes = [
-      makeNote({ id: 'root-b', sort_order: 1, created_at: 100 }),
-      makeNote({ id: 'root-a', sort_order: 0, created_at: 200 }),
-      makeNote({ id: 'child-b', parent_id: 'root-a', sort_order: 1, created_at: 50 }),
-      makeNote({ id: 'child-a', parent_id: 'root-a', sort_order: 0, created_at: 100 }),
+      makeNote({ id: 'root-b', position_key: 'a00000001' }),
+      makeNote({ id: 'root-a', position_key: 'a00000000' }),
+      makeNote({ id: 'child-b', parent_id: 'root-a', position_key: 'a00000001' }),
+      makeNote({ id: 'child-a', parent_id: 'root-a', position_key: 'a00000000' }),
     ]
 
     const tree = buildNoteTree(notes)
@@ -54,8 +56,8 @@ describe('buildNoteTree', () => {
 
   it('treats notes with missing parent as roots', () => {
     const notes = [
-      makeNote({ id: 'orphan', parent_id: 'missing', sort_order: 0, created_at: 1 }),
-      makeNote({ id: 'root', sort_order: 0, created_at: 2 }),
+      makeNote({ id: 'orphan', parent_id: 'missing', position_key: 'a0' }),
+      makeNote({ id: 'root', position_key: 'a1' }),
     ]
 
     const tree = buildNoteTree(notes)
