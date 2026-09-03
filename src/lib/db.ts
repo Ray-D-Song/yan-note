@@ -23,7 +23,13 @@ export type NoteListItem = {
   title: string
   icon: string | null
   sort_order: number
+  created_at: number
   updated_at: number
+}
+
+export type NoteReorderUpdate = {
+  parent_id: string | null
+  ordered_ids: string[]
 }
 
 export type SessionRow = {
@@ -125,14 +131,128 @@ export async function createUser(
 export async function listNotesByUser(db: D1Database, userId: string): Promise<NoteListItem[]> {
   const result = await db
     .prepare(
-      `SELECT id, parent_id, title, icon, sort_order, updated_at
+      `SELECT id, parent_id, title, icon, sort_order, created_at, updated_at
        FROM notes
        WHERE user_id = ?
-       ORDER BY sort_order ASC, updated_at DESC`,
+       ORDER BY sort_order ASC, created_at ASC`,
     )
     .bind(userId)
     .all<NoteListItem>()
   return result.results ?? []
+}
+
+export async function getNextSortOrder(
+  db: D1Database,
+  userId: string,
+  parentId: string | null,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order
+       FROM notes
+       WHERE user_id = ?
+         AND (
+           (parent_id IS NULL AND ? IS NULL)
+           OR parent_id = ?
+         )`,
+    )
+    .bind(userId, parentId, parentId)
+    .first<{ next_order: number }>()
+
+  return row?.next_order ?? 0
+}
+
+async function listNoteParentIds(
+  db: D1Database,
+  userId: string,
+): Promise<Array<{ id: string; parent_id: string | null }>> {
+  const result = await db
+    .prepare('SELECT id, parent_id FROM notes WHERE user_id = ?')
+    .bind(userId)
+    .all<{ id: string; parent_id: string | null }>()
+  return result.results ?? []
+}
+
+function isDescendantOf(
+  notes: Array<{ id: string; parent_id: string | null }>,
+  ancestorId: string,
+  nodeId: string,
+): boolean {
+  const parentById = new Map(notes.map((note) => [note.id, note.parent_id]))
+  let current: string | null | undefined = nodeId
+
+  while (current) {
+    if (current === ancestorId) {
+      return true
+    }
+    current = parentById.get(current) ?? null
+  }
+
+  return false
+}
+
+export async function reorderNotes(
+  db: D1Database,
+  userId: string,
+  updates: NoteReorderUpdate[],
+): Promise<{ ok: true } | { error: string }> {
+  if (updates.length === 0) {
+    return { ok: true }
+  }
+
+  const noteParents = await listNoteParentIds(db, userId)
+  const noteIds = new Set(noteParents.map((note) => note.id))
+
+  for (const update of updates) {
+    if (!(await isValidParent(db, userId, update.parent_id))) {
+      return { error: 'Invalid parent note' }
+    }
+
+    if (update.ordered_ids.length === 0) {
+      continue
+    }
+
+    for (const noteId of update.ordered_ids) {
+      if (!noteIds.has(noteId)) {
+        return { error: 'Note not found' }
+      }
+
+      const current = noteParents.find((note) => note.id === noteId)
+      const parentChanged = current?.parent_id !== update.parent_id
+
+      if (parentChanged) {
+        if (update.parent_id === noteId) {
+          return { error: 'Note cannot be its own parent' }
+        }
+        if (update.parent_id && isDescendantOf(noteParents, noteId, update.parent_id)) {
+          return { error: 'Cannot move note into its own descendant' }
+        }
+      }
+    }
+  }
+
+  const timestamp = now()
+  const statements = []
+
+  for (const update of updates) {
+    update.ordered_ids.forEach((noteId, index) => {
+      statements.push(
+        db
+          .prepare(
+            `UPDATE notes
+             SET sort_order = ?, parent_id = ?, updated_at = ?
+             WHERE id = ? AND user_id = ?`,
+          )
+          .bind(index, update.parent_id, timestamp, noteId, userId),
+      )
+    })
+  }
+
+  if (statements.length > 0) {
+    await db.batch(statements)
+  }
+
+  return { ok: true }
 }
 
 export async function findNoteById(

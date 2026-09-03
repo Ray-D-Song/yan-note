@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { provide, ref } from 'vue'
-import NoteTreeItem from '@/components/sidebar/NoteTreeItem.vue'
+import { provide, ref, toRef } from 'vue'
+import NoteTreeList from '@/components/sidebar/NoteTreeList.vue'
+import {
+  provideNoteTreeNotes,
+  provideNoteTreeReorderQueue,
+} from '@/composables/useNoteTreeReorder'
+import { useNotesStore } from '@/stores/notes'
 import type { NoteTreeNode } from '@/types/note'
 
 defineProps<{
   nodes: NoteTreeNode[]
 }>()
+
+const notesStore = useNotesStore()
+provideNoteTreeReorderQueue(notesStore.reorderNotes)
+provideNoteTreeNotes(toRef(notesStore, 'notes'))
 
 const COLLAPSED_STORAGE_KEY = 'yan-note:collapsed-note-ids'
 
@@ -62,7 +71,5 @@ provide('noteTreeExpandNode', expandNode)
 </script>
 
 <template>
-  <ul class="list-unstyled note-tree mb-0">
-    <NoteTreeItem v-for="node in nodes" :key="node.id" :node="node" />
-  </ul>
+  <NoteTreeList :parent-id="null" :nodes="nodes" />
 </template>

@@ -5,6 +5,7 @@ import {
   buildNoteTree,
   type Note,
   type NoteListItem,
+  type NoteReorderUpdate,
   type NoteTreeNode,
 } from '@/types/note'
 
@@ -31,6 +32,7 @@ export const useNotesStore = defineStore('notes', () => {
           title: currentNote.value.title,
           icon: currentNote.value.icon,
           sort_order: currentNote.value.sort_order,
+          created_at: currentNote.value.created_at,
           updated_at: currentNote.value.updated_at,
         }
       } else {
@@ -40,6 +42,7 @@ export const useNotesStore = defineStore('notes', () => {
           title: currentNote.value.title,
           icon: currentNote.value.icon,
           sort_order: currentNote.value.sort_order,
+          created_at: currentNote.value.created_at,
           updated_at: currentNote.value.updated_at,
         })
       }
@@ -63,6 +66,7 @@ export const useNotesStore = defineStore('notes', () => {
       title: note.title,
       icon: note.icon,
       sort_order: note.sort_order,
+      created_at: note.created_at,
       updated_at: note.updated_at,
     })
     return note
@@ -84,6 +88,7 @@ export const useNotesStore = defineStore('notes', () => {
         title: note.title,
         icon: note.icon,
         sort_order: note.sort_order,
+        created_at: note.created_at,
         updated_at: note.updated_at,
       }
     }
@@ -101,6 +106,38 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
+  function applyReorderUpdates(updates: NoteReorderUpdate[]) {
+    for (const update of updates) {
+      update.ordered_ids.forEach((id, index) => {
+        const note = notes.value.find((item) => item.id === id)
+        if (!note) {
+          return
+        }
+        note.parent_id = update.parent_id
+        note.sort_order = index
+      })
+    }
+  }
+
+  async function reorderNotes(updates: NoteReorderUpdate[]) {
+    if (updates.length === 0) {
+      return
+    }
+
+    const snapshot = notes.value.map((note) => ({ ...note }))
+    applyReorderUpdates(updates)
+
+    try {
+      await apiRequest<{ ok: boolean }>('/notes/reorder', {
+        method: 'PUT',
+        body: JSON.stringify({ updates }),
+      })
+    } catch {
+      notes.value = snapshot
+      throw new Error('Failed to reorder notes')
+    }
+  }
+
   return {
     notes,
     currentNote,
@@ -111,5 +148,6 @@ export const useNotesStore = defineStore('notes', () => {
     createNote,
     updateNote,
     deleteNote,
+    reorderNotes,
   }
 })

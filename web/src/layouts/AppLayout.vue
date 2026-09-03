@@ -9,8 +9,8 @@ const router = useRouter()
 
 onMounted(async () => {
   await notesStore.fetchNotes()
-  if (router.currentRoute.value.name === 'home' && notesStore.notes.length > 0) {
-    const firstNote = notesStore.notes[0]
+  if (router.currentRoute.value.name === 'home' && notesStore.notesTree.length > 0) {
+    const firstNote = notesStore.notesTree[0]
     if (firstNote) {
       await router.replace({ name: 'note', params: { id: firstNote.id } })
     }

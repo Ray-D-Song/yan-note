@@ -3,8 +3,10 @@ import {
   createNote,
   deleteNote,
   findNoteById,
+  getNextSortOrder,
   isValidParent,
   listNotesByUser,
+  reorderNotes,
   updateNote,
 } from '../lib/db'
 import { authMiddleware, type AuthVariables } from '../middleware/auth'
@@ -17,6 +19,27 @@ notes.get('/', async (c) => {
   const userId = c.get('userId')
   const items = await listNotesByUser(c.env.DB, userId)
   return c.json(items)
+})
+
+notes.put('/reorder', async (c) => {
+  const userId = c.get('userId')
+  const body = await c.req.json<{
+    updates: Array<{
+      parent_id: string | null
+      ordered_ids: string[]
+    }>
+  }>()
+
+  if (!Array.isArray(body.updates)) {
+    return c.json({ error: 'Invalid reorder payload' }, 400)
+  }
+
+  const result = await reorderNotes(c.env.DB, userId, body.updates)
+  if ('error' in result) {
+    return c.json({ error: result.error }, 400)
+  }
+
+  return c.json({ ok: true })
 })
 
 notes.get('/:id', async (c) => {
@@ -44,6 +67,7 @@ notes.post('/', async (c) => {
   }
 
   const noteId = crypto.randomUUID()
+  const sortOrder = await getNextSortOrder(c.env.DB, userId, parentId)
   await createNote(c.env.DB, {
     id: noteId,
     user_id: userId,
@@ -51,7 +75,7 @@ notes.post('/', async (c) => {
     title: body.title?.trim() || '无标题',
     content: body.content ?? '',
     icon: body.icon ?? null,
-    sort_order: 0,
+    sort_order: sortOrder,
   })
 
   const note = await findNoteById(c.env.DB, userId, noteId)

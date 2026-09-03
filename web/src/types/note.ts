@@ -3,28 +3,45 @@ export interface User {
   email: string
 }
 
-export interface User {
-  id: string
-  email: string
-}
-
 export interface NoteListItem {
   id: string
   parent_id: string | null
   title: string
   icon: string | null
   sort_order: number
+  created_at: number
   updated_at: number
 }
 
 export interface Note extends NoteListItem {
   user_id: string
   content: string
-  created_at: number
 }
 
 export interface NoteTreeNode extends NoteListItem {
   children: NoteTreeNode[]
+}
+
+export interface NoteReorderUpdate {
+  parent_id: string | null
+  ordered_ids: string[]
+}
+
+export function compareNotes(a: NoteListItem, b: NoteListItem): number {
+  if (a.sort_order !== b.sort_order) {
+    return a.sort_order - b.sort_order
+  }
+  return a.created_at - b.created_at
+}
+
+function sortTreeNodes(nodes: NoteTreeNode[]): NoteTreeNode[] {
+  return nodes
+    .slice()
+    .sort(compareNotes)
+    .map((node) => ({
+      ...node,
+      children: sortTreeNodes(node.children),
+    }))
 }
 
 export function buildNoteTree(notes: NoteListItem[]): NoteTreeNode[] {
@@ -47,7 +64,7 @@ export function buildNoteTree(notes: NoteListItem[]): NoteTreeNode[] {
     }
   }
 
-  return roots
+  return sortTreeNodes(roots)
 }
 
 export function getNoteBreadcrumbs(
@@ -64,4 +81,22 @@ export function getNoteBreadcrumbs(
   }
 
   return crumbs
+}
+
+export function isDescendantOfNote(
+  notes: NoteListItem[],
+  ancestorId: string,
+  nodeId: string,
+): boolean {
+  const parentById = new Map(notes.map((note) => [note.id, note.parent_id]))
+  let current: string | null | undefined = nodeId
+
+  while (current) {
+    if (current === ancestorId) {
+      return true
+    }
+    current = parentById.get(current) ?? null
+  }
+
+  return false
 }

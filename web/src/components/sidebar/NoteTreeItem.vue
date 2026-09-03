@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, ref, watch, type Ref } from 'vue'
-import { RiAddLine, RiArrowRightSLine, RiMoreLine } from '@remixicon/vue'
+import { RiAddLine, RiArrowRightSLine, RiDraggable, RiMoreLine } from '@remixicon/vue'
+import NoteTreeList from '@/components/sidebar/NoteTreeList.vue'
 import { useRoute, useRouter } from 'vue-router'
 import NoteIcon from '@/components/common/NoteIcon.vue'
 import NoteActionMenu from '@/components/sidebar/NoteActionMenu.vue'
@@ -131,7 +132,7 @@ async function deleteNote() {
   }
   await notesStore.deleteNote(props.node.id)
   if (route.params.id === props.node.id) {
-    const next = notesStore.notes[0]
+    const next = notesStore.notesTree[0]
     if (next) {
       await router.push({ name: 'note', params: { id: next.id } })
     } else {
@@ -150,7 +151,16 @@ async function deleteNote() {
       @click="openNote"
     >
       <button
-        v-if="hasChildren"
+        class="note-tree-drag-handle"
+        type="button"
+        aria-label="拖拽排序"
+        title="拖拽排序"
+        @click.stop
+      >
+        <RiDraggable size="16px" aria-hidden="true" />
+      </button>
+
+      <button
         class="note-tree-toggle"
         type="button"
         :aria-expanded="isExpanded"
@@ -164,7 +174,6 @@ async function deleteNote() {
           aria-hidden="true"
         />
       </button>
-      <span v-else class="note-tree-toggle-spacer" aria-hidden="true" />
 
       <span class="me-2 note-tree-icon">
         <NoteIcon />
@@ -219,9 +228,12 @@ async function deleteNote() {
       </div>
     </div>
 
-    <ul v-if="hasChildren && isExpanded" class="list-unstyled note-tree ms-3 mb-0">
-      <NoteTreeItem v-for="child in node.children" :key="child.id" :node="child" />
-    </ul>
+    <NoteTreeList
+      v-if="isExpanded"
+      nested
+      :parent-id="node.id"
+      :nodes="node.children"
+    />
   </li>
 </template>
 
@@ -275,10 +287,36 @@ async function deleteNote() {
   transform: rotate(90deg);
 }
 
-.note-tree-toggle-spacer {
-  width: 20px;
+.note-tree-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 20px;
   margin-right: 2px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(55, 53, 47, 0.35);
   flex-shrink: 0;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.note-tree-row:hover .note-tree-drag-handle,
+.note-tree-row.is-menu-open .note-tree-drag-handle {
+  opacity: 1;
+}
+
+.note-tree-drag-handle:active {
+  cursor: grabbing;
+}
+
+.note-tree-drag-handle:hover {
+  background: rgba(55, 53, 47, 0.08);
+  color: rgba(55, 53, 47, 0.65);
 }
 
 .note-tree-icon {
@@ -350,6 +388,15 @@ async function deleteNote() {
 
 :root[data-theme='dark'] .note-tree-row.active {
   background: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .note-tree-drag-handle {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+:root[data-theme='dark'] .note-tree-drag-handle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 :root[data-theme='dark'] .note-tree-toggle {
